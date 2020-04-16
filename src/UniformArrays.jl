@@ -142,8 +142,21 @@ end
 
 @inline function Base.setindex!(A::MutableUniformArray, x, i::Int)
     @boundscheck checkbounds(A, i)
+    (i == length(A) == 1) || not_all_elements()
     A.val = x
 end
+
+@inline function Base.setindex!(A::MutableUniformArray, x,
+                                i::AbstractUnitRange{<:Integer})
+    (first(i) == 1 && last(i) == length(A)) || not_all_elements()
+    A.val = x
+end
+
+@inline function Base.setindex!(A::MutableUniformArray, x, ::Colon)
+    A.val = x
+end
+
+@noinline not_all_elements() = error("all elements must be set at the same time")
 
 @noinline bad_dimension_index() = error("out of range dimension index")
 

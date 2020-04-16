@@ -4,11 +4,13 @@
 |:--------------------------------|:----------------------------------------------------------------|:--------------------------------------------------------------------|
 | [![][license-img]][license-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] | [![][coveralls-img]][coveralls-url] [![][codecov-img]][codecov-url] |
 
-The UniformArrays package provides multi-dimensional arrays which behave
-like regular arrays but whose elements all have the same value.  The main
-advantage of such arrays is that they are very light in terms of memory:
-their storage requirement is `O(1)` whatever their size instead of `O(n)`
-for a usual array of `n` elements.
+UniformArrays is a small [Julia](https://julialang.org/) package which
+provides multi-dimensional arrays behaving like regular arrays but whose
+elements all have the same value.  The main advantage of such arrays is
+that they are very light in terms of memory: their storage requirement is
+`O(1)` whatever their size instead of `O(n)` for a usual array of `n`
+elements.
+
 
 ## Usage
 
@@ -25,16 +27,19 @@ multiple arguments.
 Uniform arrays implement conventional linear indexing: `A[i]` yields `val`
 for all linear indices `i` in the range `1:length(A)`.
 
-A statement like `A[i] = val` is not implemented as uniform arrays are
-considered as immutable.  You may call `MutableUniformArray(val,siz)` to
-create a uniform array, say `B`, whose element value can be changed:
+Statements like `A[i] = val` are however not implemented because uniform
+arrays are considered as immutable.  You may call
+`MutableUniformArray(val,siz)` to create a uniform array, say `B`, whose
+element value can be changed:
 
 ```julia
 B = MutableUniformArray(val, siz)
 ```
 
-A statement like `B[i] = val` is allowed but changes the value of all the
-elements of `B`.
+A statement like `B[i] = val` is allowed to change the value of all the
+elements of `B` provided index `i` represents all possible indices
+in `B`.  Typically `B[:] = val` or `B[1:end] = val` are accepted but not
+`B[1] = val` unless `B` has a single element.
 
 Apart from all values being the same, uniform arrays should behaves like
 ordinary Julia arrays.
