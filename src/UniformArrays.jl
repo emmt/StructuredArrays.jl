@@ -128,6 +128,8 @@ Base.size(A::AbstractUniformArray) = A.siz
 Base.size(A::AbstractUniformArray{T,N}, i::Integer) where {T,N} =
     (i < 1 ? bad_dimension_index() : i ≤ N ? A.siz[i] : 1)
 
+Base.axes1(A::AbstractUniformArray{T,0}) where {T} = Base.OneTo(1)
+Base.axes1(A::AbstractUniformArray{T,N}) where {T,N} = Base.OneTo(A.siz[1])
 Base.axes(A::AbstractUniformArray) = map(Base.OneTo, size(A))
 Base.axes(A::AbstractUniformArray, i::Integer) = Base.OneTo(size(A, i))
 
