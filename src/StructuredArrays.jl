@@ -194,7 +194,7 @@ end
 function StructuredArray{T}(::Type{S},
                             fnc::F,
                             siz::NTuple{N,Int}) where {T,N,S<:IndexStyle,F}
-    StructuredArray{T,N,S,F}(S, fnc, siz)
+    StructuredArray{T,N,S,F}(fnc, siz)
 end
 
 guess_eltype(fnc, ::Type{IndexLinear}, ::Val{N}) where {N} =
@@ -258,12 +258,12 @@ StructuredArray(fnc, siz::Integer...) =
 StructuredArray(fnc, siz::NTuple{N,Integer}) where {N} =
     StructuredArray(IndexCartesian, fnc, to_size(siz))
 
-StructuredArray{T}(siz::Integer...) where {T} =
+StructuredArray{T}(fnc, siz::Integer...) where {T} =
     StructuredArray{T}(fnc, siz)
 StructuredArray{T}(fnc, siz::NTuple{N,Integer}) where {T,N} =
     StructuredArray{T}(IndexCartesian, fnc, to_size(siz))
 
-StructuredArray{T,N}(siz::Integer...) where {T,N} =
+StructuredArray{T,N}(fnc, siz::Integer...) where {T,N} =
     StructuredArray{T,N}(fnc, siz) # keep the N to check
 StructuredArray{T,N}(fnc, siz::NTuple{N,Integer}) where {T,N} =
     StructuredArray{T}(fnc, siz)
