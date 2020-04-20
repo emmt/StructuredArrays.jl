@@ -1,6 +1,6 @@
-module TestUniformArrays
+module TestStructuredArrays
 
-using Test, UniformArrays
+using Test, StructuredArrays
 
 @testset "Uniform arrays" begin
     dims = (2, 3, 4)
