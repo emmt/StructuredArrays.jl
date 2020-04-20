@@ -91,32 +91,34 @@ const MutableUniformMatrix{T} = MutableUniformArray{T,2}
 const UniformMatrix{T} = UniformArray{T,2}
 
 # Constructors for UniformArray.
-UniformArray(val::T, siz::Integer...) where {T} =
-    UniformArray{T}(val, siz)
-UniformArray(val::T, siz::NTuple{N,Integer}) where {T,N} =
-    UniformArray{T,N}(val, siz)
+UniformArray(val, siz::Integer...) =
+    UniformArray(val, siz)
 UniformArray{T}(val, siz::Integer...) where {T} =
     UniformArray{T}(val, siz)
-UniformArray{T}(val, siz::NTuple{N,Integer}) where {T,N} =
-    UniformArray{T,N}(val, siz)
 UniformArray{T,N}(val, siz::Integer...) where {T,N} =
     UniformArray{T,N}(val, siz)
+
+UniformArray(val::T, siz::NTuple{N,Integer}) where {T,N} =
+    UniformArray{T,N}(val, to_size(siz))
+UniformArray{T}(val, siz::NTuple{N,Integer}) where {T,N} =
+    UniformArray{T,N}(val, to_size(siz))
 UniformArray{T,N}(val, siz::NTuple{N,Integer}) where {T,N} =
-    UniformArray{T,N}(val, map(Int, siz))
+    UniformArray{T,N}(val, to_size(siz))
 
 # Constructors for MutableUniformArray.
-MutableUniformArray(val::T, siz::Integer...) where {T} =
-    MutableUniformArray{T}(val, siz)
-MutableUniformArray(val::T, siz::NTuple{N,Integer}) where {T,N} =
-    MutableUniformArray{T,N}(val, siz)
+MutableUniformArray(val, siz::Integer...) =
+    MutableUniformArray(val, siz)
 MutableUniformArray{T}(val, siz::Integer...) where {T} =
     MutableUniformArray{T}(val, siz)
-MutableUniformArray{T}(val, siz::NTuple{N,Integer}) where {T,N} =
-    MutableUniformArray{T,N}(val, siz)
 MutableUniformArray{T,N}(val, siz::Integer...) where {T,N} =
     MutableUniformArray{T,N}(val, siz)
+
+MutableUniformArray(val::T, siz::NTuple{N,Integer}) where {T,N} =
+    MutableUniformArray{T,N}(val, to_size(siz))
+MutableUniformArray{T}(val, siz::NTuple{N,Integer}) where {T,N} =
+    MutableUniformArray{T,N}(val, to_size(siz))
 MutableUniformArray{T,N}(val, siz::NTuple{N,Integer}) where {T,N} =
-    MutableUniformArray{T,N}(val, map(Int, siz))
+    MutableUniformArray{T,N}(val, to_size(siz))
 
 Base.eltype(::AbstractUniformArray{T}) where {T} = T
 
@@ -163,5 +165,14 @@ end
 @noinline bad_dimension_index() = error("out of range dimension index")
 
 @noinline bad_dimension_length() = error("invalid dimension length")
+
+# Methods to convert size argument to canonic form.
+to_size(siz::Tuple{Vararg{Int}}) = siz
+to_size(siz::Tuple{Vararg{Integer}}) = map(to_int, siz)
+to_size(siz::Integer) = (to_int(siz),)
+
+# Convert to integer type suitable for indexing.
+to_int(i::Int) = i
+to_int(i::Integer) = Int(i)
 
 end # module
