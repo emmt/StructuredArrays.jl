@@ -286,9 +286,20 @@ for X in (:StructuredArray, :UniformArray, :MutableUniformArray)
     end
 end
 
+# See comments near `getindex` in `abstractarray.jl` for explanations about how
+# `getindex` and `setindex!` methods are expected to be specialized depending
+# on the indexing style.
+
 Base.IndexStyle(::Type{<:AbstractStructuredArray{T,N,S}}) where {T,N,S} = S()
 
-@inline function Base.getindex(A::StructuredArray{T}, inds...) :: T where {T}
+@inline function Base.getindex(A::StructuredArray{T,N,IndexLinear},
+                               i::Int) :: T where {T,N}
+    @boundscheck checkbounds(A, i)
+    A.fnc(i)
+end
+
+@inline function Base.getindex(A::StructuredArray{T,N,IndexCartesian},
+                               inds::Vararg{Int, N}) :: T where {T,N}
     @boundscheck checkbounds(A, inds...)
     A.fnc(inds...)
 end
