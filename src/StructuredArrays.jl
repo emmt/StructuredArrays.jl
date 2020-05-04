@@ -26,8 +26,11 @@ export
 
 import Base: @propagate_inbounds
 
-abstract type AbstractStructuredArray{T,N,S<:IndexStyle} <: AbstractArray{T,N} end
-abstract type AbstractUniformArray{T,N} <: AbstractStructuredArray{T,N,IndexLinear} end
+abstract type AbstractStructuredArray{T,N,S<:IndexStyle} <:
+    AbstractArray{T,N} end
+
+abstract type AbstractUniformArray{T,N} <:
+    AbstractStructuredArray{T,N,IndexLinear} end
 
 """
     UniformArray(val, siz) -> A
@@ -50,14 +53,8 @@ struct UniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
     siz::NTuple{N,Int}
     val::T
-    function UniformArray{T,N}(val, siz::NTuple{N,Int}) where {T,N}
-        len = 1
-        @inbounds for i in 1:N
-            (dim = siz[i]) ≥ 0 || bad_dimension_length()
-            len *= dim
-        end
-        return new{T,N}(len, siz, val)
-    end
+    UniformArray{T,N}(val, siz::NTuple{N,Int}) where {T,N} =
+        new{T,N}(checksize(siz), siz, val)
 end
 
 """
@@ -81,14 +78,8 @@ mutable struct MutableUniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
     siz::NTuple{N,Int}
     val::T
-    function MutableUniformArray{T,N}(val, siz::NTuple{N,Int}) where {T,N}
-        len = 1
-        @inbounds for i in 1:N
-            (dim = siz[i]) ≥ 0 || bad_dimension_length()
-            len *= dim
-        end
-        return new{T,N}(len, siz, val)
-    end
+    MutableUniformArray{T,N}(val, siz::NTuple{N,Int}) where {T,N} =
+        new{T,N}(checksize(siz), siz, val)
 end
 
 """
@@ -128,14 +119,8 @@ struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
     len::Int
     siz::NTuple{N,Int}
     fnc::F
-    function StructuredArray{T,N,S,F}(fnc, siz::NTuple{N,Int}) where {T,N,S,F}
-        len = 1
-        @inbounds for i in 1:N
-            (dim = siz[i]) ≥ 0 || bad_dimension_length()
-            len *= dim
-        end
-        return new{T,N,S,F}(len, siz, fnc)
-    end
+    StructuredArray{T,N,S,F}(fnc, siz::NTuple{N,Int}) where {T,N,S,F} =
+        new{T,N,S,F}(checksize(siz), siz, fnc)
 end
 
 const AbstractStructuredVector{T,S} = AbstractStructuredArray{T,1,S}
@@ -327,7 +312,24 @@ end
     A.val = x
 end
 
-@noinline not_all_elements() = error("all elements must be set at the same time")
+"""
+    checksize(siz) -> len
+
+checks the array size `siz` and returns the corresponding total number of
+elements.
+
+"""
+@inline function checksize(siz::NTuple{N,Int}) where {N}
+    len = 1
+    @inbounds for i in 1:N
+        (dim = siz[i]) ≥ 0 || bad_dimension_length()
+        len *= dim
+    end
+    return len
+end
+
+@noinline not_all_elements() =
+    error("all elements must be set at the same time")
 
 @noinline bad_dimension_index() = error("out of range dimension index")
 
