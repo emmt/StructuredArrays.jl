@@ -1,9 +1,17 @@
 module TestStructuredArrays
 
 using Test, StructuredArrays
+using StructuredArrays: to_int, to_size
+
+@testset "Utilities" begin
+    dims = (Int8(2), Int16(3), Int32(4))
+    @test to_size(dims) === map(Int, dims)
+    @test to_size(dims) === map(to_int, dims)
+end
 
 @testset "Uniform arrays" begin
-    dims = (2, 3, 4)
+    dims = (Int8(2), Int16(3), Int32(4))
+    @test to_size(dims) === map(Int, dims)
     N = length(dims)
     vals = (Float64(2.1), UInt32(7), UInt16(11),
             Float32(-6.2), Float64(pi), Int16(-4))
@@ -25,7 +33,7 @@ using Test, StructuredArrays
         @test axes(A) === map(Base.OneTo, size(A))
         @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
         @test_throws ErrorException axes(A,0)
-        @test Base.has_offset_axes(A, A) == false
+        @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexLinear()
         @test A == fill!(Array{T}(undef, size(A)), A[1])
         @test_throws ErrorException A[1] = zero(T)
@@ -45,7 +53,7 @@ using Test, StructuredArrays
         @test axes(B) === map(Base.OneTo, size(B))
         @test ntuple(i -> axes(B,i), ndims(B)+1) == (axes(B)..., Base.OneTo(1))
         @test_throws ErrorException axes(B,0)
-        @test Base.has_offset_axes(B, B) == false
+        @test Base.has_offset_axes(B) == false
         @test IndexStyle(B) === IndexLinear()
         @test B == fill!(Array{T}(undef, size(B)), B[1])
         @test_throws ErrorException B[1] = zero(T)
@@ -62,15 +70,25 @@ using Test, StructuredArrays
         @test B[end] == B[1] == x
     end
 
+    # Array with zero dimensions.
+    C = UniformArray{Int,0}(17)
+    @test C[1] == 17
+    @test Base.axes1(C) == 1:1
+    @test Base.has_offset_axes(C) == false
+
     # Using index 1 to set a single-element mutable uniform array is allowed.
     D = MutableUniformArray(11, 1)
     @test D[1] == 11
     D[1] = 6
     @test D[1] == 6
+
+    # Call constructors with illegal dimension.
+    @test_throws ErrorException UniformArray{Int}(17, 1, -1)
+    @test_throws ErrorException MutableUniformArray{Int}(17, 1, -1)
 end
 
 @testset "Structured arrays" begin
-    dims = (3, 4)
+    dims = (Int8(3), Int16(4))
     N = length(dims)
     f1(i) = -2i
     f2(i,j) = (-1 ≤ i - j ≤ 2)
@@ -103,7 +121,7 @@ end
         @test axes(A) === map(Base.OneTo, size(A))
         @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
         @test_throws ErrorException axes(A,0)
-        @test Base.has_offset_axes(A, A) == false
+        @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexCartesian()
         @test A == [f2(i,j) for i in 1:dims[1], j in 1:dims[2]]
         #@test_throws ErrorException A[1,1] = zero(T)
@@ -129,12 +147,18 @@ end
         @test axes(A) === map(Base.OneTo, size(A))
         @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
         @test_throws ErrorException axes(A,0)
-        @test Base.has_offset_axes(A, A) == false
+        @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexLinear()
-        @test A == [f1(I[CartesianIndex(i,j)]) for i in 1:dims[1], j in 1:dims[2]]
+        @test A == [f1(I[CartesianIndex(i,j)])
+                    for i in 1:dims[1], j in 1:dims[2]]
         #@test_throws ErrorException A[1,1] = zero(T)
         @test_throws BoundsError A[0,1]
     end
+
+    # Call constructors with illegal dimension.
+    @test_throws ErrorException StructuredArray{Bool}((i,j) -> i ≥ j, 1, -1)
 end
 
 end # module
+
+nothing
