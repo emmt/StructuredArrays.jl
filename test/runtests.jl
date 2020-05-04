@@ -4,9 +4,10 @@ using Test, StructuredArrays
 using StructuredArrays: to_int, to_size
 
 @testset "Utilities" begin
-    dims = (Int8(2), Int16(3), Int32(4))
+    dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
     @test to_size(dims) === map(Int, dims)
     @test to_size(dims) === map(to_int, dims)
+    @test to_size(dims[2]) === (to_int(dims[2]),)
 end
 
 @testset "Uniform arrays" begin
@@ -35,6 +36,7 @@ end
         @test_throws ErrorException axes(A,0)
         @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexLinear()
+        @test IndexStyle(typeof(A)) === IndexLinear()
         @test A == fill!(Array{T}(undef, size(A)), A[1])
         @test_throws ErrorException A[1] = zero(T)
         @test_throws BoundsError A[0]
@@ -55,6 +57,7 @@ end
         @test_throws ErrorException axes(B,0)
         @test Base.has_offset_axes(B) == false
         @test IndexStyle(B) === IndexLinear()
+        @test IndexStyle(typeof(B)) === IndexLinear()
         @test B == fill!(Array{T}(undef, size(B)), B[1])
         @test_throws ErrorException B[1] = zero(T)
         @test_throws BoundsError B[0]
@@ -123,6 +126,7 @@ end
         @test_throws ErrorException axes(A,0)
         @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexCartesian()
+        @test IndexStyle(typeof(A)) === IndexCartesian()
         @test A == [f2(i,j) for i in 1:dims[1], j in 1:dims[2]]
         #@test_throws ErrorException A[1,1] = zero(T)
         @test_throws BoundsError A[0,1]
@@ -149,6 +153,7 @@ end
         @test_throws ErrorException axes(A,0)
         @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexLinear()
+        @test IndexStyle(typeof(A)) === IndexLinear()
         @test A == [f1(I[CartesianIndex(i,j)])
                     for i in 1:dims[1], j in 1:dims[2]]
         #@test_throws ErrorException A[1,1] = zero(T)
