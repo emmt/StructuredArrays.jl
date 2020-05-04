@@ -69,7 +69,7 @@ A = StructuredArray(S, fnc, siz)
 where `S` may be a sub-type of `IndexStyle` or an instance of such a sub-type.
 If `S` is `IndexCartesian` (the default), the function `fnc` will be called
 with `N` integer arguments, `N` being the number of dimensions.  If `S` is
-`IndexCartesian`, the function `fnc` will be called with a single integer
+`IndexLinear`, the function `fnc` will be called with a single integer
 argument.
 
 For instance, the structure of a lower triangular matrix of size `m×n` would be
