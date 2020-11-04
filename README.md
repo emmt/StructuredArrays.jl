@@ -22,26 +22,25 @@ Call:
 A = UniformArray(val, siz)
 ```
 
-to create an array `A` which behaves as an immutable array of size `siz` whose
-values are all `val`.  The array dimensions may be specified as
-multiple arguments.
+to create an array `A` which behaves as a read-only array of size `siz` whose
+values are all `val`.  The array dimensions may be specified as multiple
+arguments.
 
-Uniform arrays implement conventional linear indexing: `A[i]` yields `val`
-for all linear indices `i` in the range `1:length(A)`.
+Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
+all linear indices `i` in the range `1:length(A)`.
 
-Statements like `A[i] = val` are however not implemented because uniform
-arrays are considered as immutable.  You may call
-`MutableUniformArray(val,siz)` to create a uniform array, say `B`, whose
-element value can be changed:
+Statements like `A[i] = val` are however not implemented because uniform arrays
+are considered as read-only.  You may call `MutableUniformArray(val,siz)` to
+create a uniform array, say `B`, whose element value can be changed:
 
 ```julia
 B = MutableUniformArray(val, siz)
 ```
 
 A statement like `B[i] = val` is allowed to change the value of all the
-elements of `B` provided index `i` represents all possible indices
-in `B`.  Typically `B[:] = val` or `B[1:end] = val` are accepted but not
-`B[1] = val` unless `B` has a single element.
+elements of `B` provided index `i` represents all possible indices in `B`.
+Typically `B[:] = val` or `B[1:end] = val` are accepted but not `B[1] = val`
+unless `B` has a single element.
 
 Apart from all values being the same, uniform arrays should behaves like
 ordinary Julia arrays.
@@ -56,10 +55,10 @@ A = StructuredArray(fnc, siz)
 ```
 
 to create a structured array `A` which behaves as an array of size `siz` whose
-values are a given function, here `fnc`, of its indices: `A[i]` is computed as
-`fnc(i)`.  The array dimensions may be specified as multiple arguments.
+entries are computed as a given function, here `fnc`, of its indices: `A[i]`
+yields `fnc(i)`.  The array dimensions may be specified as multiple arguments.
 
-An optional leading argument `S` may be used to specifiy another index style
+An optional leading argument `S` may be used to specify another index style
 than the default `IndexCartesian`:
 
 ```julia
@@ -94,8 +93,9 @@ StructuredArray{T}([S = IndexCartesian,] fnc, siz)
 
 ## Installation
 
-StructuredArrays is not yet an [offical Julia package](https://pkg.julialang.org/)
-but it is easy to install it from Julia as explained below.
+StructuredArrays is not yet an [offical Julia
+package](https://pkg.julialang.org/) but it is easy to install it from Julia as
+explained below.
 
 
 ### Using the package manager
