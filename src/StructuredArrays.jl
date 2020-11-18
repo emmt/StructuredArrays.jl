@@ -36,7 +36,7 @@ abstract type AbstractUniformArray{T,N} <:
     UniformArray(val, siz) -> A
 
 yields an array `A` which behaves as an immutable array of size `siz` whose
-values are all `val`.  The storage requirement is `O(1)` instead of
+values are all equal to `val`.  The storage requirement is `O(1)` instead of
 `O(prod(siz))` for a usual array.  The array dimensions may be specified as
 multiple arguments.
 
@@ -313,16 +313,16 @@ end
 end
 
 """
-    checksize(siz) -> len
+    checksize(dims) -> len
 
-checks the array size `siz` and returns the corresponding total number of
-elements.
+yields the number of elements of an array of size `dims` throwing an error if
+any dimension is invalid.
 
 """
-@inline function checksize(siz::NTuple{N,Int}) where {N}
+function checksize(dims::Dims{N}) where {N}
     len = 1
     @inbounds for i in 1:N
-        (dim = siz[i]) ≥ 0 || bad_dimension_length()
+        (dim = dims[i]) ≥ 0 || bad_dimension_length()
         len *= dim
     end
     return len
@@ -336,7 +336,7 @@ end
 @noinline bad_dimension_length() = error("invalid dimension length")
 
 # Methods to convert size argument to canonic form.
-to_size(siz::Tuple{Vararg{Int}}) = siz
+to_size(siz::Dims) = siz
 to_size(siz::Tuple{Vararg{Integer}}) = map(to_int, siz)
 to_size(siz::Integer) = (to_int(siz),)
 
