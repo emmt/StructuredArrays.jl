@@ -169,8 +169,8 @@ This also works from the Julia REPL.
 [license-url]: ./LICENSE.md
 [license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
 
-[travis-img]: https://travis-ci.com/emmt/StructuredArrays.jl.svg?branch=master
-[travis-url]: https://travis-ci.com/emmt/StructuredArrays.jl
+[travis-img]: https://travis-ci.org/emmt/StructuredArrays.jl.svg?branch=master
+[travis-url]: https://travis-ci.org/emmt/StructuredArrays.jl
 
 [appveyor-img]: https://ci.appveyor.com/api/projects/status/github/emmt/StructuredArrays.jl?branch=master
 [appveyor-url]: https://ci.appveyor.com/project/emmt/StructuredArrays-jl/branch/master
