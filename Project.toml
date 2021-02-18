@@ -1,7 +1,7 @@
 name = "StructuredArrays"
 uuid = "2e8cd123-6858-488d-b42d-068777248635"
 authors = ["Éric Thiébaut <https://github.com/emmt>"]
-version = "0.2.1"
+version = "0.2.2"
 
 [compat]
 julia = "1.0"
