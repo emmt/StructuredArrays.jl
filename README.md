@@ -4,25 +4,28 @@
 |:--------------------------------|:----------------------------------------------------------------|:--------------------------------------------------------------------|
 | [![][license-img]][license-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] | [![][coveralls-img]][coveralls-url] [![][codecov-img]][codecov-url] |
 
-StructuredArrays is a small [Julia](https://julialang.org/) package which
+`StructuredArrays` is a small [Julia](https://julialang.org/) package which
 provides multi-dimensional arrays behaving like regular arrays but whose
 elements have the same given value or are computed by applying a given function
 to their indices.  The main advantage of such arrays is that they are very
 light in terms of memory: their storage requirement is `O(1)` whatever their
 size instead of `O(n)` for a usual array of `n` elements.
 
+Note that `StructuredArrays` has a different purpose than
+[`StructArrays`](https://github.com/JuliaArrays/StructArrays.jl) which is
+designed for arrays whose elements are `struct`.
 
-## Usage
 
-### Uniform arrays
+## Uniform arrays
 
-Call:
+All elements of a uniform array have the same value.  To build such an array,
+call:
 
 ```julia
 A = UniformArray(val, siz)
 ```
 
-to create an array `A` which behaves as a read-only array of size `siz` whose
+which yields an array `A` behaving as a read-only array of size `siz` whose
 values are all `val`.  The array dimensions may be specified as multiple
 arguments.
 
@@ -46,15 +49,16 @@ Apart from all values being the same, uniform arrays should behaves like
 ordinary Julia arrays.
 
 
-### Structured arrays
+## Structured arrays
 
-Call:
+The values of the elements of a structured array are computed on the fly as a
+function of their indices.  To build such an array, call:
 
 ```julia
 A = StructuredArray(fnc, siz)
 ```
 
-to create a structured array `A` which behaves as an array of size `siz` whose
+which yields an array `A` behaving as a read-only array of size `siz` whose
 entries are computed as a given function, here `fnc`, of its indices: `A[i]`
 yields `fnc(i)`.  The array dimensions may be specified as multiple arguments.
 
@@ -71,8 +75,9 @@ with `N` integer arguments, `N` being the number of dimensions.  If `S` is
 `IndexLinear`, the function `fnc` will be called with a single integer
 argument.
 
-For instance, the structure of a lower triangular matrix of size `m×n` would be
-given by:
+A structured array can be used to specify the location of structural non-zeros
+in a sparse matrix.  For instance, the structure of a lower triangular matrix
+of size `m×n` would be given by:
 
 ```julia
 StructuredArray((i,j) -> (i ≥ j), m, n)
@@ -89,76 +94,6 @@ The element type, say `T`, may also be explicitely specified:
 ```julia
 StructuredArray{T}([S = IndexCartesian,] fnc, siz)
 ```
-
-
-## Installation
-
-StructuredArrays is not yet an [offical Julia
-package](https://pkg.julialang.org/) but it is easy to install it from Julia as
-explained below.
-
-
-### Using the package manager
-
-
-At the [REPL of
-Julia](https://docs.julialang.org/en/stable/manual/interacting-with-julia/),
-hit the `]` key to switch to the package manager REPL (you should get a
-`... pkg>` prompt) and type:
-
-```julia
-pkg> add https://github.com/emmt/StructuredArrays.jl
-```
-
-where `pkg>` represents the package manager prompt and `https` protocol has
-been assumed; if `ssh` is more suitable for you, then type:
-
-```julia
-pkg> add git@github.com:emmt/StructuredArrays.jl
-```
-
-instead.  To check whether the StructuredArrays package works correctly, type:
-
-```julia
-pkg> test StructuredArrays
-```
-
-Later, to update to the last version (and run tests), you can type:
-
-```julia
-pkg> update StructuredArrays
-pkg> build StructuredArrays
-pkg> test StructuredArrays
-```
-
-If something goes wrong, it may be because you already have an old version of
-StructuredArrays.  Uninstall StructuredArrays as follows:
-
-```julia
-pkg> rm StructuredArrays
-pkg> gc
-pkg> add https://github.com/emmt/StructuredArrays.jl
-```
-
-before re-installing.
-
-To revert to Julia's REPL, hit the `Backspace` key at the `... pkg>` prompt.
-
-
-### Installation in scripts
-
-To install StructuredArrays in a Julia script, write:
-
-```julia
-if VERSION >= v"0.7.0-"
-    using Pkg
-end
-Pkg.add(PackageSpec(url="https://github.com/emmt/StructuredArrays.jl", rev="master"));
-```
-
-or with `url="git@github.com:emmt/StructuredArrays.jl"` if you want to use `ssh`.
-
-This also works from the Julia REPL.
 
 [doc-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [doc-stable-url]: https://emmt.github.io/StructuredArrays.jl/stable
