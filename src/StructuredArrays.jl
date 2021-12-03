@@ -234,10 +234,6 @@ function StructuredArray{T,N,S}(fnc,
     StructuredArray{T}(S, fnc, to_size(siz))
 end
 
-Base.eltype(::AbstractStructuredArray{T}) where {T} = T
-
-Base.ndims(::AbstractStructuredArray{T,N}) where {T,N} = N
-
 for cls in (:StructuredArray, :UniformArray, :MutableUniformArray)
     @eval begin
         Base.length(A::$cls) = getfield(A, :len)
