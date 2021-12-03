@@ -1,10 +1,11 @@
-#
-# StructuredArrays.jl --
-#
-# Implement arrays whose elements have values that only depend on the indices.
-# Exemple of such arrays are uniform arrays with constant values, structured
-# arrays with boolean values indicating whether an entry is significant.
-#
+"""
+
+Package `StructuredArrays` implements arrays whose elements have values that
+only depend on the indices.  Example of such arrays are uniform arrays with
+constant values, structured arrays with boolean values indicating whether an
+entry is significant.
+
+"""
 module StructuredArrays
 
 export
