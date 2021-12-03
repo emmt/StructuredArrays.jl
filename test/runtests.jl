@@ -1,16 +1,15 @@
 module TestStructuredArrays
 
-using Test, StructuredArrays
-using StructuredArrays: to_int, to_size
+using Test, ArrayTools, StructuredArrays
 
-@testset "Utilities" begin
+@testset "Utilities        " begin
     dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
     @test to_size(dims) === map(Int, dims)
     @test to_size(dims) === map(to_int, dims)
     @test to_size(dims[2]) === (to_int(dims[2]),)
 end
 
-@testset "Uniform arrays" begin
+@testset "Uniform arrays   " begin
     dims = (Int8(2), Int16(3), Int32(4))
     @test to_size(dims) === map(Int, dims)
     N = length(dims)
