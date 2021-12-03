@@ -137,10 +137,21 @@ const AbstractUniformMatrix{T} = AbstractUniformArray{T,2}
 const MutableUniformMatrix{T} = MutableUniformArray{T,2}
 const UniformMatrix{T} = UniformArray{T,2}
 
-# Basic constructors for StructuredArray, UniformArray, and MutableUniformArray
-# to convert trailing arguments to dimensions.
+# Specialize base abstract array methods for StructuredArray, UniformArray, and
+# MutableUniformArray and provide basic constructors to convert trailing
+# arguments to dimensions.
 for cls in (:StructuredArray, :UniformArray, :MutableUniformArray)
     @eval begin
+        Base.length(A::$cls) = getfield(A, :len)
+        Base.size(A::$cls) = getfield(A, :siz)
+        Base.size(A::$cls{T,N}, i::Integer) where {T,N} =
+            (i < 1 ? bad_dimension_index() : i ≤ N ? @inbounds(size(A)[i]) : 1)
+        Base.axes1(A::$cls{T,0}) where {T} = Base.OneTo(1)
+        Base.axes1(A::$cls{T,N}) where {T,N} = Base.OneTo(size(A)[1])
+        Base.axes(A::$cls) = map(Base.OneTo, size(A))
+        Base.axes(A::$cls, i::Integer) = Base.OneTo(size(A, i))
+        Base.has_offset_axes(::$cls) = false
+
         $cls(arg1, dims::Integer...) = $cls(arg1, dims)
         $cls{T}(arg1, dims::Integer...) where {T} = $cls{T}(arg1, dims)
         $cls{T,N}(arg1, dims::Integer...) where {T,N} = $cls{T,N}(arg1, dims)
@@ -232,20 +243,6 @@ end
 function StructuredArray{T,N,S}(fnc,
                                 siz::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
     StructuredArray{T}(S, fnc, to_size(siz))
-end
-
-for cls in (:StructuredArray, :UniformArray, :MutableUniformArray)
-    @eval begin
-        Base.length(A::$cls) = getfield(A, :len)
-        Base.size(A::$cls) = getfield(A, :siz)
-        Base.size(A::$cls{T,N}, i::Integer) where {T,N} =
-            (i < 1 ? bad_dimension_index() : i ≤ N ? @inbounds(size(A)[i]) : 1)
-        Base.axes1(A::$cls{T,0}) where {T} = Base.OneTo(1)
-        Base.axes1(A::$cls{T,N}) where {T,N} = Base.OneTo(size(A)[1])
-        Base.axes(A::$cls) = map(Base.OneTo, size(A))
-        Base.axes(A::$cls, i::Integer) = Base.OneTo(size(A, i))
-        Base.has_offset_axes(::$cls) = false
-    end
 end
 
 # See comments near `getindex` in `abstractarray.jl` for explanations about how
