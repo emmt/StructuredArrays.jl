@@ -24,6 +24,7 @@ export
     UniformMatrix,
     UniformVector
 
+using ArrayTools
 import Base: @propagate_inbounds
 
 abstract type AbstractStructuredArray{T,N,S<:IndexStyle} <:
@@ -337,14 +338,5 @@ end
 @noinline bad_dimension_index() = error("out of range dimension index")
 
 @noinline bad_dimension_length() = error("invalid dimension length")
-
-# Methods to convert size argument to canonic form.
-to_size(siz::Dims) = siz
-to_size(siz::Tuple{Vararg{Integer}}) = map(to_int, siz)
-to_size(siz::Integer) = (to_int(siz),)
-
-# Convert to integer type suitable for indexing.
-to_int(i::Int) = i
-to_int(i::Integer) = Int(i)
 
 end # module
