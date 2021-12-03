@@ -137,35 +137,32 @@ const AbstractUniformMatrix{T} = AbstractUniformArray{T,2}
 const MutableUniformMatrix{T} = MutableUniformArray{T,2}
 const UniformMatrix{T} = UniformArray{T,2}
 
-# Constructors for UniformArray.
-UniformArray(val, siz::Integer...) =
-    UniformArray(val, siz)
-UniformArray{T}(val, siz::Integer...) where {T} =
-    UniformArray{T}(val, siz)
-UniformArray{T,N}(val, siz::Integer...) where {T,N} =
-    UniformArray{T,N}(val, siz)
+# Basic constructors for StructuredArray, UniformArray, and MutableUniformArray
+# to convert trailing arguments to dimensions.
+for cls in (:StructuredArray, :UniformArray, :MutableUniformArray)
+    @eval begin
+        $cls(arg1, dims::Integer...) = $cls(arg1, dims)
+        $cls{T}(arg1, dims::Integer...) where {T} = $cls{T}(arg1, dims)
+        $cls{T,N}(arg1, dims::Integer...) where {T,N} = $cls{T,N}(arg1, dims)
+    end
+end
+for cls in (:UniformArray, :MutableUniformArray)
+    @eval begin
+        $cls(val::T, siz::NTuple{N,Integer}) where {T,N} =
+            $cls{T,N}(val, to_size(siz))
+        $cls{T}(val, siz::NTuple{N,Integer}) where {T,N} =
+            $cls{T,N}(val, to_size(siz))
+        $cls{T,N}(val, siz::NTuple{N,Integer}) where {T,N} =
+            $cls{T,N}(val, to_size(siz))
+    end
+end
 
-UniformArray(val::T, siz::NTuple{N,Integer}) where {T,N} =
-    UniformArray{T,N}(val, to_size(siz))
-UniformArray{T}(val, siz::NTuple{N,Integer}) where {T,N} =
-    UniformArray{T,N}(val, to_size(siz))
-UniformArray{T,N}(val, siz::NTuple{N,Integer}) where {T,N} =
-    UniformArray{T,N}(val, to_size(siz))
-
-# Constructors for MutableUniformArray.
-MutableUniformArray(val, siz::Integer...) =
-    MutableUniformArray(val, siz)
-MutableUniformArray{T}(val, siz::Integer...) where {T} =
-    MutableUniformArray{T}(val, siz)
-MutableUniformArray{T,N}(val, siz::Integer...) where {T,N} =
-    MutableUniformArray{T,N}(val, siz)
-
-MutableUniformArray(val::T, siz::NTuple{N,Integer}) where {T,N} =
-    MutableUniformArray{T,N}(val, to_size(siz))
-MutableUniformArray{T}(val, siz::NTuple{N,Integer}) where {T,N} =
-    MutableUniformArray{T,N}(val, to_size(siz))
-MutableUniformArray{T,N}(val, siz::NTuple{N,Integer}) where {T,N} =
-    MutableUniformArray{T,N}(val, to_size(siz))
+StructuredArray(fnc, siz::NTuple{N,Integer}) where {N} =
+    StructuredArray(IndexCartesian, fnc, to_size(siz))
+StructuredArray{T}(fnc, siz::NTuple{N,Integer}) where {T,N} =
+    StructuredArray{T}(IndexCartesian, fnc, to_size(siz))
+StructuredArray{T,N}(fnc, siz::NTuple{N,Integer}) where {T,N} =
+    StructuredArray{T}(fnc, siz)
 
 # All constructors for StructuredArray are based on the 2 first ones (only
 # depending on whether parameter T is provided or not) so the other constructors
@@ -237,39 +234,21 @@ function StructuredArray{T,N,S}(fnc,
     StructuredArray{T}(S, fnc, to_size(siz))
 end
 
-# Index style not specified and size specified as a tuple or by trailing
-# arguments.
-
-StructuredArray(fnc, siz::Integer...) =
-    StructuredArray(fnc, siz)
-StructuredArray(fnc, siz::NTuple{N,Integer}) where {N} =
-    StructuredArray(IndexCartesian, fnc, to_size(siz))
-
-StructuredArray{T}(fnc, siz::Integer...) where {T} =
-    StructuredArray{T}(fnc, siz)
-StructuredArray{T}(fnc, siz::NTuple{N,Integer}) where {T,N} =
-    StructuredArray{T}(IndexCartesian, fnc, to_size(siz))
-
-StructuredArray{T,N}(fnc, siz::Integer...) where {T,N} =
-    StructuredArray{T,N}(fnc, siz) # keep the N to check
-StructuredArray{T,N}(fnc, siz::NTuple{N,Integer}) where {T,N} =
-    StructuredArray{T}(fnc, siz)
-
 Base.eltype(::AbstractStructuredArray{T}) where {T} = T
 
 Base.ndims(::AbstractStructuredArray{T,N}) where {T,N} = N
 
-for X in (:StructuredArray, :UniformArray, :MutableUniformArray)
+for cls in (:StructuredArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        Base.length(A::$X) = getfield(A, :len)
-        Base.size(A::$X) = getfield(A, :siz)
-        Base.size(A::$X{T,N}, i::Integer) where {T,N} =
+        Base.length(A::$cls) = getfield(A, :len)
+        Base.size(A::$cls) = getfield(A, :siz)
+        Base.size(A::$cls{T,N}, i::Integer) where {T,N} =
             (i < 1 ? bad_dimension_index() : i ≤ N ? @inbounds(size(A)[i]) : 1)
-        Base.axes1(A::$X{T,0}) where {T} = Base.OneTo(1)
-        Base.axes1(A::$X{T,N}) where {T,N} = Base.OneTo(size(A)[1])
-        Base.axes(A::$X) = map(Base.OneTo, size(A))
-        Base.axes(A::$X, i::Integer) = Base.OneTo(size(A, i))
-        Base.has_offset_axes(::$X) = false
+        Base.axes1(A::$cls{T,0}) where {T} = Base.OneTo(1)
+        Base.axes1(A::$cls{T,N}) where {T,N} = Base.OneTo(size(A)[1])
+        Base.axes(A::$cls) = map(Base.OneTo, size(A))
+        Base.axes(A::$cls, i::Integer) = Base.OneTo(size(A, i))
+        Base.has_offset_axes(::$cls) = false
     end
 end
 
