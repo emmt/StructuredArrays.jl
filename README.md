@@ -1,15 +1,16 @@
 # Structured arrays for Julia
 
-| **License**                     | **Build Status**                                                | **Code Coverage**                                                   |
-|:--------------------------------|:----------------------------------------------------------------|:--------------------------------------------------------------------|
-| [![][license-img]][license-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] | [![][coveralls-img]][coveralls-url] [![][codecov-img]][codecov-url] |
+[![License][license-img]][license-url]
+[![Build Status][github-ci-img]][github-ci-url]
+[![Build Status][appveyor-img]][appveyor-url]
+[![Coverage][codecov-img]][codecov-url]
 
-`StructuredArrays` is a small [Julia](https://julialang.org/) package which
-provides multi-dimensional arrays behaving like regular arrays but whose
-elements have the same given value or are computed by applying a given function
-to their indices.  The main advantage of such arrays is that they are very
-light in terms of memory: their storage requirement is `O(1)` whatever their
-size instead of `O(n)` for a usual array of `n` elements.
+`StructuredArrays` is a small [Julia][julia-url] package which provides
+multi-dimensional arrays behaving like regular arrays but whose elements have
+the same given value or are computed by applying a given function to their
+indices.  The main advantage of such arrays is that they are very light in
+terms of memory: their storage requirement is `O(1)` whatever their size
+instead of `O(n)` for a usual array of `n` elements.
 
 Note that `StructuredArrays` has a different purpose than
 [`StructArrays`](https://github.com/JuliaArrays/StructArrays.jl) which is
@@ -104,14 +105,11 @@ StructuredArray{T}([S = IndexCartesian,] fnc, siz)
 [license-url]: ./LICENSE.md
 [license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
 
-[travis-img]: https://travis-ci.org/emmt/StructuredArrays.jl.svg?branch=master
-[travis-url]: https://travis-ci.org/emmt/StructuredArrays.jl
+[github-ci-img]: https://github.com/emmt/StructuredArrays.jl/actions/workflows/CI.yml/badge.svg?branch=master
+[github-ci-url]: https://github.com/emmt/StructuredArrays.jl/actions/workflows/CI.yml?query=branch%3Amaster
 
 [appveyor-img]: https://ci.appveyor.com/api/projects/status/github/emmt/StructuredArrays.jl?branch=master
 [appveyor-url]: https://ci.appveyor.com/project/emmt/StructuredArrays-jl/branch/master
-
-[coveralls-img]: https://coveralls.io/repos/emmt/StructuredArrays.jl/badge.svg?branch=master&service=github
-[coveralls-url]: https://coveralls.io/github/emmt/StructuredArrays.jl?branch=master
 
 [codecov-img]: http://codecov.io/github/emmt/StructuredArrays.jl/coverage.svg?branch=master
 [codecov-url]: http://codecov.io/github/emmt/StructuredArrays.jl?branch=master
