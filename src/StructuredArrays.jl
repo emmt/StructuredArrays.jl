@@ -53,9 +53,9 @@ uniform array whose element value can be changed.
 
 struct UniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
-    siz::NTuple{N,Int}
+    siz::Dims{N}
     val::T
-    UniformArray{T,N}(val, siz::NTuple{N,Int}) where {T,N} =
+    UniformArray{T,N}(val, siz::Dims{N}) where {T,N} =
         new{T,N}(checksize(siz), siz, val)
 end
 
@@ -78,9 +78,9 @@ array whose element value cannot be changed.
 
 mutable struct MutableUniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
-    siz::NTuple{N,Int}
+    siz::Dims{N}
     val::T
-    MutableUniformArray{T,N}(val, siz::NTuple{N,Int}) where {T,N} =
+    MutableUniformArray{T,N}(val, siz::Dims{N}) where {T,N} =
         new{T,N}(checksize(siz), siz, val)
 end
 
@@ -119,9 +119,9 @@ The element type, say `T`, may also be explicitely specified:
 
 struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
     len::Int
-    siz::NTuple{N,Int}
+    siz::Dims{N}
     fnc::F
-    StructuredArray{T,N,S,F}(fnc, siz::NTuple{N,Int}) where {T,N,S,F} =
+    StructuredArray{T,N,S,F}(fnc, siz::Dims{N}) where {T,N,S,F} =
         new{T,N,S,F}(checksize(siz), siz, fnc)
 end
 
@@ -181,14 +181,14 @@ StructuredArray{T,N}(fnc, siz::NTuple{N,Integer}) where {T,N} =
 
 function StructuredArray(::Type{S},
                          fnc::F,
-                         siz::NTuple{N,Int}) where {N,S<:IndexStyle,F}
+                         siz::Dims{N}) where {N,S<:IndexStyle,F}
     T = guess_eltype(fnc, S, Val(N))
     StructuredArray{T,N,S,F}(fnc, siz)
 end
 
 function StructuredArray{T}(::Type{S},
                             fnc::F,
-                            siz::NTuple{N,Int}) where {T,N,S<:IndexStyle,F}
+                            siz::Dims{N}) where {T,N,S<:IndexStyle,F}
     StructuredArray{T,N,S,F}(fnc, siz)
 end
 
