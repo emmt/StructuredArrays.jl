@@ -113,3 +113,6 @@ StructuredArray{T}([S = IndexCartesian,] fnc, siz)
 
 [codecov-img]: http://codecov.io/github/emmt/StructuredArrays.jl/coverage.svg?branch=master
 [codecov-url]: http://codecov.io/github/emmt/StructuredArrays.jl?branch=master
+
+[julia-url]: https://julialang.org/
+[julia-pkgs-url]: https://pkg.julialang.org/
