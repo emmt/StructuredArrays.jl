@@ -100,6 +100,20 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         @test_throws BoundsError C[0]
     end
 
+    # Check conversuion of value.
+    let A = UniformArray{Float32}(π, dims)
+        @test eltype(A) === Float32
+        @test first(A) === Float32(π)
+    end
+    let A = MutableUniformArray{Float32}(π, dims)
+        @test eltype(A) === Float32
+        @test first(A) === Float32(π)
+    end
+    let A = FastUniformArray{Float32}(π, dims)
+        @test eltype(A) === Float32
+        @test first(A) === Float32(π)
+    end
+
     # All true and all false uniform arrays.
     let A = UniformArray(true, dims), B = FastUniformArray(true, dims)
         @test all(A) === true
