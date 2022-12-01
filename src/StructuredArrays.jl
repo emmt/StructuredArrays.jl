@@ -217,8 +217,8 @@ end
 guess_eltype(func, ::Type{IndexLinear}, ::Val{N}) where {N} =
     Base.promote_op(func, Int)
 
-guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
-    Base.promote_op(func, Vararg{Int, N})
+@generated guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
+    :(Base.promote_op(func, $(ntuple(x -> Int, Val(N))...)))
 
 # Index style specified and size specified as a tuple or by trailing arguments.
 
