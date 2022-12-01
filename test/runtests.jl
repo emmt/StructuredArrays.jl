@@ -10,7 +10,7 @@ using StructuredArrays: checksize
     @test to_size(dims[2]) === (to_int(dims[2]),)
     @test checksize((0x4, Int16(11))) == 44
     @test checksize((0x4, Int16(11), 0)) == 0
-    @test_throws ErrorException checksize((0x4, Int16(-11)))
+    @test_throws ArgumentError checksize((0x4, Int16(-11)))
 end
 
 # Error type when setindex! is not implemented. This depends on Julia version.
@@ -134,8 +134,8 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
     @test D[1] == 6
 
     # Call constructors with illegal dimension.
-    @test_throws ErrorException UniformArray{Int}(17, 1, -1)
-    @test_throws ErrorException MutableUniformArray{Int}(17, 1, -1)
+    @test_throws ArgumentError UniformArray{Int}(17, 1, -1)
+    @test_throws ArgumentError MutableUniformArray{Int}(17, 1, -1)
 end
 
 @testset "Structured arrays" begin
@@ -209,7 +209,7 @@ end
     end
 
     # Call constructors with illegal dimension.
-    @test_throws ErrorException StructuredArray{Bool}((i,j) -> i ≥ j, 1, -1)
+    @test_throws ArgumentError StructuredArray{Bool}((i,j) -> i ≥ j, 1, -1)
 end
 
 end # module

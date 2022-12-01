@@ -312,6 +312,9 @@ end
     A
 end
 
+@noinline not_all_elements() =
+    error("all elements must be set at the same time")
+
 """
     StructuredArrays.checksize(dims) -> len
 
@@ -327,13 +330,8 @@ function checksize(dims::NTuple{N,Integer}) where {N}
         flag &= dim ≥ 0
         len *= dim
     end
-    flag || bad_dimension_length()
+    flag || throw(ArgumentError("invalid array dimensions"))
     return len
 end
-
-@noinline not_all_elements() =
-    error("all elements must be set at the same time")
-
-@noinline bad_dimension_length() = error("invalid dimension length")
 
 end # module
