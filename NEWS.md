@@ -6,6 +6,8 @@
   immutable uniform arrays but with the elements value being part of the
   signature so that this value is known at compile time.
 
+- A few optimizations for uniform arrays of booleans.
+
 
 ## Version 0.2.3
 
