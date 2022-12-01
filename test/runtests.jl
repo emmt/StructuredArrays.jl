@@ -1,12 +1,16 @@
 module TestStructuredArrays
 
 using Test, ArrayTools, StructuredArrays
+using StructuredArrays: checksize
 
 @testset "Utilities        " begin
     dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
     @test to_size(dims) === map(Int, dims)
     @test to_size(dims) === map(to_int, dims)
     @test to_size(dims[2]) === (to_int(dims[2]),)
+    @test checksize((0x4, Int16(11))) == 44
+    @test checksize((0x4, Int16(11), 0)) == 0
+    @test_throws ErrorException checksize((0x4, Int16(-11)))
 end
 
 # Error type when setindex! is not implemented. This depends on Julia version.

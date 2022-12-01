@@ -323,12 +323,15 @@ yields the number of elements of an array of size `dims` throwing an error if
 any dimension is invalid.
 
 """
-function checksize(dims::Dims{N}) where {N}
+function checksize(dims::NTuple{N,Integer}) where {N}
     len = 1
+    flag = true
     @inbounds for i in 1:N
-        (dim = dims[i]) ≥ 0 || bad_dimension_length()
+        dim = Int(dims[i])
+        flag &= dim ≥ 0
         len *= dim
     end
+    flag || bad_dimension_length()
     return len
 end
 
