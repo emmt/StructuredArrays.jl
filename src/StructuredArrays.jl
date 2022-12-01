@@ -52,8 +52,7 @@ A statement like `A[i] = val` is not implemented as uniform arrays are
 considered as immutable. Call `MutableUniformArray(val,dims)` to create a
 uniform array whose element value can be changed.
 
-""" UniformArray
-
+"""
 struct UniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
     dims::Dims{N}
@@ -93,8 +92,7 @@ A statement like `A[i] = val` is allowed but changes the value of all the
 elements of `A`. Call `UniformArray(val,dims)` to create an immutable uniform
 array whose element value cannot be changed.
 
-""" MutableUniformArray
-
+"""
 mutable struct MutableUniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
     dims::Dims{N}
@@ -134,8 +132,7 @@ The element type, say `T`, may also be explicitely specified:
 
     StructuredArray{T}([S = IndexCartesian,] func, dims)
 
-""" StructuredArray
-
+"""
 struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
     len::Int
     dims::Dims{N}
@@ -283,39 +280,35 @@ Base.IndexStyle(::Type{<:AbstractStructuredArray{T,N,S}}) where {T,N,S} = S()
 @inline function Base.getindex(A::StructuredArray{T,N,IndexLinear},
                                i::Int) :: T where {T,N}
     @boundscheck checkbounds(A, i)
-    A.func(i)
+    return A.func(i)
 end
 
 @inline function Base.getindex(A::StructuredArray{T,N,IndexCartesian},
                                inds::Vararg{Int, N}) :: T where {T,N}
     @boundscheck checkbounds(A, inds...)
-    A.func(inds...)
+    return A.func(inds...)
 end
 
-@inline function Base.getindex(A::FastUniformArray{T,N,V}, I...) where {T,N,V}
+getval(A::FastUniformArray{T,N,V}) where {T,N,V} = V
+getval(A::AbstractUniformArray) = getfield(A, :val)
+
+@inline function Base.getindex(A::AbstractUniformArray, I...)
     @boundscheck checkbounds(A, I...)
-    return V
-end
-
-@inline function Base.getindex(A::X,
-                               i::Int) where {X<:Union{<:UniformArray,
-                                                       <:MutableUniformArray}}
-    @boundscheck checkbounds(A, i)
-    A.val
+    return getval(A)
 end
 
 @inline function Base.setindex!(A::MutableUniformArray, x, i::Int)
     @boundscheck checkbounds(A, i)
     (i == length(A) == 1) || not_all_elements()
     A.val = x
-    A
+    return A
 end
 
 @inline function Base.setindex!(A::MutableUniformArray, x,
                                 i::AbstractUnitRange{<:Integer})
     (first(i) == 1 && last(i) == length(A)) || not_all_elements()
     A.val = x
-    A
+    return A
 end
 
 @inline function Base.setindex!(A::MutableUniformArray, x, ::Colon)
@@ -324,7 +317,7 @@ end
 end
 
 """
-    checksize(dims) -> len
+    StructuredArrays.checksize(dims) -> len
 
 yields the number of elements of an array of size `dims` throwing an error if
 any dimension is invalid.
