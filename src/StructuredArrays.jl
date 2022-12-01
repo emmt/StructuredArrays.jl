@@ -219,10 +219,10 @@ function StructuredArray{T}(::Type{S},
 end
 
 guess_eltype(func, ::Type{IndexLinear}, ::Val{N}) where {N} =
-    typeof(func(one(Int)))
+    Base.promote_op(func, Int)
 
 guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
-    typeof(func(ntuple(i -> one(Int), Val(N))...))
+    Base.promote_op(func, Vararg{Int, N})
 
 # Index style specified and size specified as a tuple or by trailing arguments.
 
