@@ -41,7 +41,7 @@ abstract type AbstractUniformArray{T,N} <:
     UniformArray(val, dims) -> A
 
 yields an array `A` which behaves as an immutable array of size `dims` whose
-values are all equal to `val`. The storage requirement is `O(1)` instead of
+elements are all equal to `val`. The storage requirement is `O(1)` instead of
 `O(prod(dims))` for a usual array. The array dimensions may be specified as
 multiple arguments.
 
@@ -64,10 +64,10 @@ end
 """
     FastUniformArray(val, dims) -> A
 
-yields an abstract array of size `dims` whose elements are all equal to `val`.
-A typical use is to create all true/false masks. Do not overuse this kind of
-arrays as the value `val` is part of the type signature of the returned object,
-and consider using a [`UniformArray`](@ref) instead.
+yields an immutable uniform array of size `dims` and whose elements are all
+equal to `val`. The difference with an instance of [`UniformArray`](@ref) is
+that `val` is part of the type signature so that `val` can be known at compile
+time. A typical use is to create all true/false masks.
 
 """
 struct FastUniformArray{T,N,V} <: AbstractUniformArray{T,N}
