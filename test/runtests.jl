@@ -9,6 +9,9 @@ using Test, ArrayTools, StructuredArrays
     @test to_size(dims[2]) === (to_int(dims[2]),)
 end
 
+# Error type when setindex! is not implemented. This depends on Julia version.
+const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexError : ErrorException
+
 @testset "Uniform arrays   " begin
     dims = (Int8(2), Int16(3), Int32(4))
     @test to_size(dims) === map(Int, dims)
@@ -37,7 +40,7 @@ end
         @test IndexStyle(A) === IndexLinear()
         @test IndexStyle(typeof(A)) === IndexLinear()
         @test A == fill!(Array{T}(undef, size(A)), A[1])
-        @test_throws ErrorException A[1] = zero(T)
+        @test_throws NoSetIndexMethod A[1] = zero(T)
         @test_throws BoundsError A[0]
 
         B = (k == 1 ? MutableUniformArray(x, dims) :
