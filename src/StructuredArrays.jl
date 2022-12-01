@@ -334,8 +334,6 @@ end
 @noinline not_all_elements() =
     error("all elements must be set at the same time")
 
-@noinline bad_dimension_index() = error("out of range dimension index")
-
 @noinline bad_dimension_length() = error("invalid dimension length")
 
 end # module
