@@ -113,6 +113,13 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         @test count(A) == 0
         @test count(B) == 0
     end
+    let A = MutableUniformArray(true, dims)
+        @test all(A) === true
+        @test count(A) == length(A)
+        A[:] = false
+        @test all(A) === false
+        @test count(A) == 0
+    end
 
     # Array with zero dimensions.
     C = UniformArray{Int,0}(17)
