@@ -179,11 +179,14 @@ for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
     end
 end
 
+# Make sure value has correct type.
 FastUniformArray{T,N}(val, dims::Dims{N}) where {T,N} =
     FastUniformArray{T,N}(convert(T, val)::T, dims)
 
-# Specialize some methods for FastUniformArray.
+# Specialize some methods for (fast) uniform arrays of booleans.
+Base.all(A::AbstractUniformArray{Bool}) = first(A)
 Base.all(A::FastUniformArray{Bool,N,V}) where {N,V} = V
+Base.count(A::AbstractUniformArray{Bool}) = ifelse(first(A), length(A), 0)
 Base.count(A::FastUniformArray{Bool,N,true}) where {N} = length(A)
 Base.count(A::FastUniformArray{Bool,N,false}) where {N} = 0
 
