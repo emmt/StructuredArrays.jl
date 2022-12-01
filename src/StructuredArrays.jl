@@ -1,7 +1,7 @@
 """
 
 Package `StructuredArrays` implements arrays whose elements have values that
-only depend on the indices.  Example of such arrays are uniform arrays with
+only depend on the indices. Example of such arrays are uniform arrays with
 constant values, structured arrays with boolean values indicating whether an
 entry is significant.
 
@@ -38,28 +38,28 @@ abstract type AbstractUniformArray{T,N} <:
     AbstractStructuredArray{T,N,IndexLinear} end
 
 """
-    UniformArray(val, siz) -> A
+    UniformArray(val, dims) -> A
 
-yields an array `A` which behaves as an immutable array of size `siz` whose
-values are all equal to `val`.  The storage requirement is `O(1)` instead of
-`O(prod(siz))` for a usual array.  The array dimensions may be specified as
+yields an array `A` which behaves as an immutable array of size `dims` whose
+values are all equal to `val`. The storage requirement is `O(1)` instead of
+`O(prod(dims))` for a usual array. The array dimensions may be specified as
 multiple arguments.
 
-Uniform arrays implement conventional linear indexing: `A[i]` yields `val`
-for all linear indices `i` in the range `1:length(A)`.
+Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
+all linear indices `i` in the range `1:length(A)`.
 
 A statement like `A[i] = val` is not implemented as uniform arrays are
-considered as immutable.  Call `MutableUniformArray(val,siz)` to create a
+considered as immutable. Call `MutableUniformArray(val,dims)` to create a
 uniform array whose element value can be changed.
 
 """ UniformArray
 
 struct UniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
-    siz::Dims{N}
+    dims::Dims{N}
     val::T
-    UniformArray{T,N}(val, siz::Dims{N}) where {T,N} =
-        new{T,N}(checksize(siz), siz, val)
+    UniformArray{T,N}(val, dims::Dims{N}) where {T,N} =
+        new{T,N}(checksize(dims), dims, val)
 end
 
 """
@@ -73,50 +73,50 @@ and consider using a [`UniformArray`](@ref) instead.
 """
 struct FastUniformArray{T,N,V} <: AbstractUniformArray{T,N}
     len::Int
-    siz::Dims{N}
+    dims::Dims{N}
     FastUniformArray{T,N}(val::T, dims::Dims{N}) where {T,N} =
         new{T,N,val}(checksize(dims), dims)
 end
 
 """
-    MutableUniformArray(val, siz) -> A
+    MutableUniformArray(val, dims) -> A
 
-yields an array `A` which behaves as a mutable array of size `siz` whose
-values are all `val`.  The storage requirement is `O(1)` instead of
-`O(prod(siz))` for a usual array.  The array dimensions may be specified as
+yields an array `A` which behaves as a mutable array of size `dims` whose
+values are all `val`. The storage requirement is `O(1)` instead of
+`O(prod(dims))` for a usual array. The array dimensions may be specified as
 multiple arguments.
 
-Uniform arrays implement conventional linear indexing: `A[i]` yields `val`
-for all linear indices `i` in the range `1:length(A)`.
+Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
+all linear indices `i` in the range `1:length(A)`.
 
 A statement like `A[i] = val` is allowed but changes the value of all the
-elements of `A`.  Call `UniformArray(val,siz)` to create an immutable uniform
+elements of `A`. Call `UniformArray(val,dims)` to create an immutable uniform
 array whose element value cannot be changed.
 
 """ MutableUniformArray
 
 mutable struct MutableUniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
-    siz::Dims{N}
+    dims::Dims{N}
     val::T
-    MutableUniformArray{T,N}(val, siz::Dims{N}) where {T,N} =
-        new{T,N}(checksize(siz), siz, val)
+    MutableUniformArray{T,N}(val, dims::Dims{N}) where {T,N} =
+        new{T,N}(checksize(dims), dims, val)
 end
 
 """
-    StructuredArray([S = IndexCartesian,] fnc, siz) -> A
+    StructuredArray([S = IndexCartesian,] func, dims) -> A
 
-yields an array `A` which behaves as an array of size `siz` whose values are a
-given function, here `fnc`, of its indices: `A[i]` is computed as `fnc(i)`.
-The storage requirement is `O(1)` instead of `O(prod(siz))` for a usual array.
+yields an array `A` which behaves as an array of size `dims` whose values are a
+given function, here `func`, of its indices: `A[i]` is computed as `func(i)`.
+The storage requirement is `O(1)` instead of `O(prod(dims))` for a usual array.
 The array dimensions may be specified as multiple arguments.
 
 The optional argument `S` may be used to specifiy another index style than the
-default `IndexCartesian`, for instance `IndexLinear`.  If specified, `S` may be
-a sub-type of `IndexStyle` or an instance of such a sub-type.  If `S` is
-`IndexCartesian` (the default), the function `fnc` will be called with `N`
-integer arguments, `N` being the number of dimensions.  If `S` is
-`IndexCartesian`, the function `fnc` will be called with a single integer
+default `IndexCartesian`, for instance `IndexLinear`. If specified, `S` may be
+a sub-type of `IndexStyle` or an instance of such a sub-type. If `S` is
+`IndexCartesian` (the default), the function `func` will be called with `N`
+integer arguments, `N` being the number of dimensions. If `S` is
+`IndexCartesian`, the function `func` will be called with a single integer
 argument.
 
 For instance, the structure of a lower triangular matrix of size `m×n` would be
@@ -126,22 +126,22 @@ given by:
 
 but with a constant small storage requirement whatever the size of the matrix.
 
-Although the callable object `fnc` may not be a *pure function*, its return
+Although the callable object `func` may not be a *pure function*, its return
 type shall be stable and structured arrays are considered as immutable in the
-sense that a statement like `A[i] = val` is not implemented.  The type of the
-elements of structured array is guessed by applying `fnc` to the unit index.
+sense that a statement like `A[i] = val` is not implemented. The type of the
+elements of structured array is guessed by applying `func` to the unit index.
 The element type, say `T`, may also be explicitely specified:
 
-    StructuredArray{T}([S = IndexCartesian,] fnc, siz)
+    StructuredArray{T}([S = IndexCartesian,] func, dims)
 
 """ StructuredArray
 
 struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
     len::Int
-    siz::Dims{N}
-    fnc::F
-    StructuredArray{T,N,S,F}(fnc, siz::Dims{N}) where {T,N,S,F} =
-        new{T,N,S,F}(checksize(siz), siz, fnc)
+    dims::Dims{N}
+    func::F
+    StructuredArray{T,N,S,F}(func, dims::Dims{N}) where {T,N,S,F} =
+        new{T,N,S,F}(checksize(dims), dims, func)
 end
 
 const AbstractStructuredVector{T,S} = AbstractStructuredArray{T,1,S}
@@ -164,7 +164,7 @@ const FastUniformMatrix{T,V} = FastUniformArray{T,2,V}
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
         Base.length(A::$cls) = getfield(A, :len)
-        Base.size(A::$cls) = getfield(A, :siz)
+        Base.size(A::$cls) = getfield(A, :dims)
         Base.size(A::$cls{T,N}, i::Integer) where {T,N} =
             (i < 1 ? bad_dimension_index() : i ≤ N ? @inbounds(size(A)[i]) : 1)
         Base.axes1(A::$cls{T,0}) where {T} = Base.OneTo(1)
@@ -180,12 +180,12 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
 end
 for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        $cls(val::T, siz::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, to_size(siz))
-        $cls{T}(val, siz::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, to_size(siz))
-        $cls{T,N}(val, siz::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, to_size(siz))
+        $cls(val::T, dims::NTuple{N,Integer}) where {T,N} =
+            $cls{T,N}(val, to_size(dims))
+        $cls{T}(val, dims::NTuple{N,Integer}) where {T,N} =
+            $cls{T,N}(val, to_size(dims))
+        $cls{T,N}(val, dims::NTuple{N,Integer}) where {T,N} =
+            $cls{T,N}(val, to_size(dims))
     end
 end
 
@@ -197,81 +197,81 @@ Base.all(A::FastUniformArray{Bool,N,V}) where {N,V} = V
 Base.count(A::FastUniformArray{Bool,N,true}) where {N} = length(A)
 Base.count(A::FastUniformArray{Bool,N,false}) where {N} = 0
 
-StructuredArray(fnc, siz::NTuple{N,Integer}) where {N} =
-    StructuredArray(IndexCartesian, fnc, to_size(siz))
-StructuredArray{T}(fnc, siz::NTuple{N,Integer}) where {T,N} =
-    StructuredArray{T}(IndexCartesian, fnc, to_size(siz))
-StructuredArray{T,N}(fnc, siz::NTuple{N,Integer}) where {T,N} =
-    StructuredArray{T}(fnc, siz)
+StructuredArray(func, dims::NTuple{N,Integer}) where {N} =
+    StructuredArray(IndexCartesian, func, to_size(dims))
+StructuredArray{T}(func, dims::NTuple{N,Integer}) where {T,N} =
+    StructuredArray{T}(IndexCartesian, func, to_size(dims))
+StructuredArray{T,N}(func, dims::NTuple{N,Integer}) where {T,N} =
+    StructuredArray{T}(func, dims)
 
 # All constructors for StructuredArray are based on the 2 first ones (only
 # depending on whether parameter T is provided or not) so the other constructors
 # just make sure and arguments have correct type.
 
 function StructuredArray(::Type{S},
-                         fnc::F,
-                         siz::Dims{N}) where {N,S<:IndexStyle,F}
-    T = guess_eltype(fnc, S, Val(N))
-    StructuredArray{T,N,S,F}(fnc, siz)
+                         func::F,
+                         dims::Dims{N}) where {N,S<:IndexStyle,F}
+    T = guess_eltype(func, S, Val(N))
+    StructuredArray{T,N,S,F}(func, dims)
 end
 
 function StructuredArray{T}(::Type{S},
-                            fnc::F,
-                            siz::Dims{N}) where {T,N,S<:IndexStyle,F}
-    StructuredArray{T,N,S,F}(fnc, siz)
+                            func::F,
+                            dims::Dims{N}) where {T,N,S<:IndexStyle,F}
+    StructuredArray{T,N,S,F}(func, dims)
 end
 
-guess_eltype(fnc, ::Type{IndexLinear}, ::Val{N}) where {N} =
-    typeof(fnc(one(Int)))
+guess_eltype(func, ::Type{IndexLinear}, ::Val{N}) where {N} =
+    typeof(func(one(Int)))
 
-guess_eltype(fnc, ::Type{IndexCartesian}, ::Val{N}) where {N} =
-    typeof(fnc(ntuple(i -> one(Int), Val(N))...))
+guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
+    typeof(func(ntuple(i -> one(Int), Val(N))...))
 
 # Index style specified and size specified as a tuple or by trailing arguments.
 
-function StructuredArray(::Union{S,Type{S}}, fnc,
-                         siz::Integer...) where {S<:IndexStyle}
-    StructuredArray(S, fnc, siz)
+function StructuredArray(::Union{S,Type{S}}, func,
+                         dims::Integer...) where {S<:IndexStyle}
+    StructuredArray(S, func, dims)
 end
-function StructuredArray(::Union{S,Type{S}}, fnc,
-                         siz::NTuple{N,Integer}) where {N,S<:IndexStyle}
-    StructuredArray(S, fnc, to_size(siz))
-end
-
-function StructuredArray{T}(::Union{S,Type{S}}, fnc,
-                            siz::Integer...) where {T,S<:IndexStyle}
-    StructuredArray{T}(S, fnc, siz)
-end
-function StructuredArray{T}(::Union{S,Type{S}}, fnc,
-                            siz::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, fnc, to_size(siz))
+function StructuredArray(::Union{S,Type{S}}, func,
+                         dims::NTuple{N,Integer}) where {N,S<:IndexStyle}
+    StructuredArray(S, func, to_size(dims))
 end
 
-function StructuredArray{T,N}(::Union{S,Type{S}}, fnc,
-                              siz::Integer...) where {T,N,S<:IndexStyle}
-    StructuredArray{T,N}(S, fnc, siz) # keep the N to check
+function StructuredArray{T}(::Union{S,Type{S}}, func,
+                            dims::Integer...) where {T,S<:IndexStyle}
+    StructuredArray{T}(S, func, dims)
 end
-function StructuredArray{T,N}(::Union{S,Type{S}}, fnc,
-                              siz::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, fnc, to_size(siz))
-end
-
-function StructuredArray{T,N,S}(::Union{S,Type{S}}, fnc,
-                                siz::Integer...) where {T,N,S<:IndexStyle}
-    StructuredArray{T,N}(S, fnc, siz) # keep the N to check
-end
-function StructuredArray{T,N,S}(::Union{S,Type{S}}, fnc,
-                                siz::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, fnc, to_size(siz))
+function StructuredArray{T}(::Union{S,Type{S}}, func,
+                            dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
+    StructuredArray{T}(S, func, to_size(dims))
 end
 
-function StructuredArray{T,N,S}(fnc,
-                                siz::Integer...) where {T,N,S<:IndexStyle}
-    StructuredArray{T,N}(S, fnc, siz) # keep the N to check
+function StructuredArray{T,N}(::Union{S,Type{S}}, func,
+                              dims::Integer...) where {T,N,S<:IndexStyle}
+    StructuredArray{T,N}(S, func, dims) # keep the N to check
 end
-function StructuredArray{T,N,S}(fnc,
-                                siz::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, fnc, to_size(siz))
+function StructuredArray{T,N}(::Union{S,Type{S}}, func,
+                              dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
+    StructuredArray{T}(S, func, to_size(dims))
+end
+
+function StructuredArray{T,N,S}(::Union{S,Type{S}}, func,
+                                dims::Integer...) where {T,N,S<:IndexStyle}
+    StructuredArray{T,N}(S, func, dims) # keep the N to check
+end
+function StructuredArray{T,N,S}(::Union{S,Type{S}}, func,
+                                dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
+    StructuredArray{T}(S, func, to_size(dims))
+end
+
+function StructuredArray{T,N,S}(func,
+                                dims::Integer...) where {T,N,S<:IndexStyle}
+    StructuredArray{T,N}(S, func, dims) # keep the N to check
+end
+function StructuredArray{T,N,S}(func,
+                                dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
+    StructuredArray{T}(S, func, to_size(dims))
 end
 
 # See comments near `getindex` in `abstractarray.jl` for explanations about how
@@ -283,13 +283,13 @@ Base.IndexStyle(::Type{<:AbstractStructuredArray{T,N,S}}) where {T,N,S} = S()
 @inline function Base.getindex(A::StructuredArray{T,N,IndexLinear},
                                i::Int) :: T where {T,N}
     @boundscheck checkbounds(A, i)
-    A.fnc(i)
+    A.func(i)
 end
 
 @inline function Base.getindex(A::StructuredArray{T,N,IndexCartesian},
                                inds::Vararg{Int, N}) :: T where {T,N}
     @boundscheck checkbounds(A, inds...)
-    A.fnc(inds...)
+    A.func(inds...)
 end
 
 @inline function Base.getindex(A::FastUniformArray{T,N,V}, I...) where {T,N,V}
