@@ -36,10 +36,10 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         @test ndims(A) == N
         @test size(A) == dims
         @test ntuple(i -> size(A,i), ndims(A)+1) == (size(A)..., 1)
-        @test_throws ErrorException size(A,0)
+        @test_throws BoundsError size(A,0)
         @test axes(A) === map(Base.OneTo, size(A))
         @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
-        @test_throws ErrorException axes(A,0)
+        @test_throws BoundsError axes(A,0)
         @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexLinear()
         @test IndexStyle(typeof(A)) === IndexLinear()
@@ -57,10 +57,10 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         @test ndims(B) == N
         @test size(B) == dims
         @test ntuple(i -> size(B,i), ndims(B)+1) == (size(B)..., 1)
-        @test_throws ErrorException size(B,0)
+        @test_throws BoundsError size(B,0)
         @test axes(B) === map(Base.OneTo, size(B))
         @test ntuple(i -> axes(B,i), ndims(B)+1) == (axes(B)..., Base.OneTo(1))
-        @test_throws ErrorException axes(B,0)
+        @test_throws BoundsError axes(B,0)
         @test Base.has_offset_axes(B) == false
         @test IndexStyle(B) === IndexLinear()
         @test IndexStyle(typeof(B)) === IndexLinear()
@@ -88,10 +88,10 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         @test ndims(C) == N
         @test size(C) == dims
         @test ntuple(i -> size(C,i), ndims(C)+1) == (size(C)..., 1)
-        @test_throws ErrorException size(C,0)
+        @test_throws BoundsError size(C,0)
         @test axes(C) === map(Base.OneTo, size(C))
         @test ntuple(i -> axes(C,i), ndims(C)+1) == (axes(C)..., Base.OneTo(1))
-        @test_throws ErrorException axes(C,0)
+        @test_throws BoundsError axes(C,0)
         @test Base.has_offset_axes(C) == false
         @test IndexStyle(C) === IndexLinear()
         @test IndexStyle(typeof(C)) === IndexLinear()
@@ -161,10 +161,10 @@ end
         @test ndims(A) == N
         @test size(A) == dims
         @test ntuple(i -> size(A,i), ndims(A)+1) == (size(A)..., 1)
-        @test_throws ErrorException size(A,0)
+        @test_throws BoundsError size(A,0)
         @test axes(A) === map(Base.OneTo, size(A))
         @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
-        @test_throws ErrorException axes(A,0)
+        @test_throws BoundsError axes(A,0)
         @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexCartesian()
         @test IndexStyle(typeof(A)) === IndexCartesian()
@@ -188,10 +188,10 @@ end
         @test ndims(A) == N
         @test size(A) == dims
         @test ntuple(i -> size(A,i), ndims(A)+1) == (size(A)..., 1)
-        @test_throws ErrorException size(A,0)
+        @test_throws BoundsError size(A,0)
         @test axes(A) === map(Base.OneTo, size(A))
         @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
-        @test_throws ErrorException axes(A,0)
+        @test_throws BoundsError axes(A,0)
         @test Base.has_offset_axes(A) == false
         @test IndexStyle(A) === IndexLinear()
         @test IndexStyle(typeof(A)) === IndexLinear()

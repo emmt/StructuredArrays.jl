@@ -162,13 +162,6 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
     @eval begin
         Base.length(A::$cls) = getfield(A, :len)
         Base.size(A::$cls) = getfield(A, :dims)
-        Base.size(A::$cls{T,N}, i::Integer) where {T,N} =
-            (i < 1 ? bad_dimension_index() : i ≤ N ? @inbounds(size(A)[i]) : 1)
-        Base.axes1(A::$cls{T,0}) where {T} = Base.OneTo(1)
-        Base.axes1(A::$cls{T,N}) where {T,N} = Base.OneTo(size(A)[1])
-        Base.axes(A::$cls) = map(Base.OneTo, size(A))
-        Base.axes(A::$cls, i::Integer) = Base.OneTo(size(A, i))
-        Base.has_offset_axes(::$cls) = false
 
         $cls(arg1, dims::Integer...) = $cls(arg1, dims)
         $cls{T}(arg1, dims::Integer...) where {T} = $cls{T}(arg1, dims)
