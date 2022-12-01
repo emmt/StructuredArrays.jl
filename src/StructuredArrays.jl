@@ -15,6 +15,9 @@ export
     AbstractUniformArray,
     AbstractUniformMatrix,
     AbstractUniformVector,
+    FastUniformArray,
+    FastUniformMatrix,
+    FastUniformVector,
     MutableUniformArray,
     MutableUniformMatrix,
     MutableUniformVector,
@@ -57,6 +60,22 @@ struct UniformArray{T,N} <: AbstractUniformArray{T,N}
     val::T
     UniformArray{T,N}(val, siz::Dims{N}) where {T,N} =
         new{T,N}(checksize(siz), siz, val)
+end
+
+"""
+    FastUniformArray(val, dims) -> A
+
+yields an abstract array of size `dims` whose elements are all equal to `val`.
+A typical use is to create all true/false masks. Do not overuse this kind of
+arrays as the value `val` is part of the type signature of the returned object,
+and consider using a [`UniformArray`](@ref) instead.
+
+"""
+struct FastUniformArray{T,N,V} <: AbstractUniformArray{T,N}
+    len::Int
+    siz::Dims{N}
+    FastUniformArray{T,N}(val::T, dims::Dims{N}) where {T,N} =
+        new{T,N,val}(checksize(dims), dims)
 end
 
 """
@@ -130,17 +149,19 @@ const StructuredVector{T,S,F} = StructuredArray{T,1,S,F}
 const AbstractUniformVector{T} = AbstractUniformArray{T,1}
 const MutableUniformVector{T} = MutableUniformArray{T,1}
 const UniformVector{T} = UniformArray{T,1}
+const FastUniformVector{T,V} = FastUniformArray{T,1,V}
 
 const AbstractStructuredMatrix{T,S} = AbstractStructuredArray{T,2,S}
 const StructuredMatrix{T,S,F} = StructuredArray{T,2,S,F}
 const AbstractUniformMatrix{T} = AbstractUniformArray{T,2}
 const MutableUniformMatrix{T} = MutableUniformArray{T,2}
 const UniformMatrix{T} = UniformArray{T,2}
+const FastUniformMatrix{T,V} = FastUniformArray{T,2,V}
 
 # Specialize base abstract array methods for StructuredArray, UniformArray, and
 # MutableUniformArray and provide basic constructors to convert trailing
 # arguments to dimensions.
-for cls in (:StructuredArray, :UniformArray, :MutableUniformArray)
+for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
         Base.length(A::$cls) = getfield(A, :len)
         Base.size(A::$cls) = getfield(A, :siz)
@@ -157,7 +178,7 @@ for cls in (:StructuredArray, :UniformArray, :MutableUniformArray)
         $cls{T,N}(arg1, dims::Integer...) where {T,N} = $cls{T,N}(arg1, dims)
     end
 end
-for cls in (:UniformArray, :MutableUniformArray)
+for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
         $cls(val::T, siz::NTuple{N,Integer}) where {T,N} =
             $cls{T,N}(val, to_size(siz))
@@ -167,6 +188,14 @@ for cls in (:UniformArray, :MutableUniformArray)
             $cls{T,N}(val, to_size(siz))
     end
 end
+
+FastUniformArray{T,N}(val, dims::Dims{N}) where {T,N} =
+    FastUniformArray{T,N}(convert(T, val)::T, dims)
+
+# Specialize some methods for FastUniformArray.
+Base.all(A::FastUniformArray{Bool,N,V}) where {N,V} = V
+Base.count(A::FastUniformArray{Bool,N,true}) where {N} = length(A)
+Base.count(A::FastUniformArray{Bool,N,false}) where {N} = 0
 
 StructuredArray(fnc, siz::NTuple{N,Integer}) where {N} =
     StructuredArray(IndexCartesian, fnc, to_size(siz))
@@ -261,6 +290,11 @@ end
                                inds::Vararg{Int, N}) :: T where {T,N}
     @boundscheck checkbounds(A, inds...)
     A.fnc(inds...)
+end
+
+@inline function Base.getindex(A::FastUniformArray{T,N,V}, I...) where {T,N,V}
+    @boundscheck checkbounds(A, I...)
+    return V
 end
 
 @inline function Base.getindex(A::X,

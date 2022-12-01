@@ -73,6 +73,41 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         x -= one(x)
         B[1:length(B)] = x
         @test B[end] == B[1] == x
+
+        C = (k == 1 ? FastUniformArray(x, dims) :
+             k == 2 ? FastUniformArray(x, dims...) :
+             k == 3 ? FastUniformArray{T}(x, dims) :
+             k == 4 ? FastUniformArray{T}(x, dims...) :
+             k == 5 ? FastUniformArray{T,N}(x, dims) :
+             k == 6 ? FastUniformArray{T,N}(x, dims...) : break)
+        @test eltype(C) === T
+        @test ndims(C) == N
+        @test size(C) == dims
+        @test ntuple(i -> size(C,i), ndims(C)+1) == (size(C)..., 1)
+        @test_throws ErrorException size(C,0)
+        @test axes(C) === map(Base.OneTo, size(C))
+        @test ntuple(i -> axes(C,i), ndims(C)+1) == (axes(C)..., Base.OneTo(1))
+        @test_throws ErrorException axes(C,0)
+        @test Base.has_offset_axes(C) == false
+        @test IndexStyle(C) === IndexLinear()
+        @test IndexStyle(typeof(C)) === IndexLinear()
+        @test C == fill!(Array{T}(undef, size(C)), C[1])
+        @test_throws NoSetIndexMethod C[1] = zero(T)
+        @test_throws BoundsError C[0]
+    end
+
+    # All true and all false uniform arrays.
+    let A = UniformArray(true, dims), B = FastUniformArray(true, dims)
+        @test all(A) === true
+        @test all(B) === true
+        @test count(A) == length(A)
+        @test count(B) == length(B)
+    end
+    let A = UniformArray(false, dims), B = FastUniformArray(false, dims)
+        @test all(A) === false
+        @test all(B) === false
+        @test count(A) == 0
+        @test count(B) == 0
     end
 
     # Array with zero dimensions.

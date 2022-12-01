@@ -50,6 +50,17 @@ Apart from all values being the same, uniform arrays should behaves like
 ordinary Julia arrays.
 
 
+## Fast uniform arrays
+
+A fast uniform array is like an immutable uniform array but with the elements
+value being part of the signature so that this value is known at compile time.
+To build such an array, call:
+
+```julia
+A = FastUniformArray(val, siz)
+```
+
+
 ## Structured arrays
 
 The values of the elements of a structured array are computed on the fly as a
