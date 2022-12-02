@@ -269,7 +269,8 @@ end
 
 # See comments near `getindex` in `abstractarray.jl` for explanations about how
 # `getindex` and `setindex!` methods are expected to be specialized depending
-# on the indexing style.
+# on the indexing style: `i:Int` for linear indexing style or
+# `i::Vararg{Int,N}` for `N` dimensional Cartesian indexing style.
 
 Base.IndexStyle(::Type{<:AbstractStructuredArray{T,N,S}}) where {T,N,S} = S()
 
@@ -280,7 +281,7 @@ Base.IndexStyle(::Type{<:AbstractStructuredArray{T,N,S}}) where {T,N,S} = S()
 end
 
 @inline function Base.getindex(A::StructuredArray{T,N,IndexCartesian},
-                               inds::Vararg{Int, N}) :: T where {T,N}
+                               inds::Vararg{Int,N}) :: T where {T,N}
     @boundscheck checkbounds(A, inds...)
     return A.func(inds...)
 end
@@ -288,8 +289,8 @@ end
 getval(A::FastUniformArray{T,N,V}) where {T,N,V} = V
 getval(A::AbstractUniformArray) = getfield(A, :val)
 
-@inline function Base.getindex(A::AbstractUniformArray, I...)
-    @boundscheck checkbounds(A, I...)
+@inline function Base.getindex(A::AbstractUniformArray, i::Int)
+    @boundscheck checkbounds(A, i)
     return getval(A)
 end
 
