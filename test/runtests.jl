@@ -148,6 +148,50 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         end
     end
 
+    # Colon and range indexing of uniform arrays.
+    let A = UniformArray(π, dims)
+        @test A[:] isa UniformVector{eltype(A)}
+        @test length(A[:]) == length(A)
+        @test first(A[:]) === first(A)
+        @test_throws BoundsError A[firstindex(A)-1:2:lastindex(A)]
+        @test_throws BoundsError A[firstindex(A):2:lastindex(A)+1]
+        r = firstindex(A):2:lastindex(A)
+        @test A[r] isa UniformVector{eltype(A)}
+        @test length(A[r]) == length(r)
+        @test first(A[r]) == first(A)
+        r = firstindex(A):firstindex(A)-1
+        @test A[r] isa UniformVector{eltype(A)}
+        @test length(A[r]) == 0
+    end
+    let A = FastUniformArray(3.1, dims)
+        @test A[:] isa FastUniformVector{eltype(A)}
+        @test length(A[:]) == length(A)
+        @test first(A[:]) === first(A)
+        @test_throws BoundsError A[firstindex(A)-1:2:lastindex(A)]
+        @test_throws BoundsError A[firstindex(A):2:lastindex(A)+1]
+        r = firstindex(A):2:lastindex(A)
+        @test A[r] isa FastUniformVector{eltype(A)}
+        @test length(A[r]) == length(r)
+        @test first(A[r]) == first(A)
+        r = firstindex(A):firstindex(A)-1
+        @test A[r] isa FastUniformVector{eltype(A)}
+        @test length(A[r]) == 0
+    end
+    let A = MutableUniformArray(Int8(5), dims)
+        @test A[:] isa MutableUniformVector{eltype(A)}
+        @test length(A[:]) == length(A)
+        @test first(A[:]) === first(A)
+        @test_throws BoundsError A[firstindex(A)-1:2:lastindex(A)]
+        @test_throws BoundsError A[firstindex(A):2:lastindex(A)+1]
+        r = firstindex(A):2:lastindex(A)
+        @test A[r] isa MutableUniformArray{eltype(A)}
+        @test length(A[r]) == length(r)
+        @test first(A[r]) == first(A)
+        r = firstindex(A):firstindex(A)-1
+        @test A[r] isa MutableUniformArray{eltype(A)}
+        @test length(A[r]) == 0
+    end
+
     # Array with zero dimensions.
     C = UniformArray{Int,0}(17)
     @test C[1] == 17

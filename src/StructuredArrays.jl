@@ -297,6 +297,14 @@ end
 for cls in (:UniformArray, :FastUniformArray, :MutableUniformArray)
     @eval begin
         Base.getindex(A::$cls, ::Colon) = $cls(getval(A), length(A))
+        @inline function Base.getindex(A::$cls, r::OrdinalRange{<:Integer,<:Integer})
+            len = length(r)
+            @boundscheck if len > 0
+                minimum(r) < firstindex(A) && throw(BoundsError(A, minimum(r)))
+                maximum(r) > lastindex(A) && throw(BoundsError(A, maximum(r)))
+            end
+            return $cls(getval(A), len)
+        end
     end
 end
 
