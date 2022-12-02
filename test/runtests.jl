@@ -120,12 +120,20 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         @test all(B) === true
         @test count(A) == length(A)
         @test count(B) == length(B)
+        let C = A[:]
+            @test C isa UniformVector{eltype(A)}
+            @test first(C) === first(A)
+        end
     end
     let A = FastUniformArray(false, dims), B = FastUniformArray(false, dims)
         @test all(A) === false
         @test all(B) === false
         @test count(A) == 0
         @test count(B) == 0
+        let C = A[:]
+            @test C isa FastUniformVector{eltype(A)}
+            @test first(C) === first(A)
+        end
     end
     let A = MutableUniformArray(true, dims)
         @test all(A) === true
@@ -133,6 +141,10 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
         A[:] = false
         @test all(A) === false
         @test count(A) == 0
+        let C = A[:]
+            @test C isa MutableUniformVector{eltype(A)}
+            @test first(C) === first(A)
+        end
     end
 
     # Array with zero dimensions.
