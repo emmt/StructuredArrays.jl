@@ -1,5 +1,14 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.7
+
+- Fix `A[i]` result for a uniform array `A` when index `i` is not a single integer.
+
+- `A[:]` and `A[r]` are optimized for a uniform array `A` and a range `r`.
+
+- Zero-dimensional structured arrays are allowed.
+
+
 ## Version 0.2.5
 
 - New fast uniform arrays built by `FastUniformArray(val,dims)` which are
