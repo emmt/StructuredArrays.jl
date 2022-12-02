@@ -340,5 +340,6 @@ function checksize(dims::NTuple{N,Integer}) where {N}
     flag || throw(ArgumentError("invalid array dimensions"))
     return len
 end
+checksize(dims::Tuple{}) = 0
 
 end # module
