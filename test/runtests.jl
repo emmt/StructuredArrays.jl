@@ -8,7 +8,7 @@ using StructuredArrays: checksize
     @test to_size(dims) === map(Int, dims)
     @test to_size(dims) === map(to_int, dims)
     @test to_size(dims[2]) === (to_int(dims[2]),)
-    @test checksize(()) == 0
+    @test checksize(()) == 1
     @test checksize((0x4, Int16(11))) == 44
     @test checksize((0x4, Int16(11), 0)) == 0
     @test_throws ArgumentError checksize((0x4, Int16(-11)))
