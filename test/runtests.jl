@@ -115,13 +115,13 @@ const NoSetIndexMethod = isdefined(Base, :CanonicalIndexError) ? CanonicalIndexE
     end
 
     # All true and all false uniform arrays.
-    let A = UniformArray(true, dims), B = FastUniformArray(true, dims)
+    let A = UniformArray(true, dims), B = UniformArray(true, dims)
         @test all(A) === true
         @test all(B) === true
         @test count(A) == length(A)
         @test count(B) == length(B)
     end
-    let A = UniformArray(false, dims), B = FastUniformArray(false, dims)
+    let A = FastUniformArray(false, dims), B = FastUniformArray(false, dims)
         @test all(A) === false
         @test all(B) === false
         @test count(A) == 0
