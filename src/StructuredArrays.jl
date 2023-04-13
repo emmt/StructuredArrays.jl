@@ -317,7 +317,7 @@ end
 
 @inline function Base.setindex!(A::MutableUniformArray, x,
                                 i::AbstractUnitRange{<:Integer})
-    (first(i) == 1 && last(i) == length(A)) || not_all_elements()
+    ((first(i) == 1) & (last(i) == length(A))) || not_all_elements()
     A.val = x
     return A
 end
