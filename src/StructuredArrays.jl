@@ -275,15 +275,15 @@ end
 Base.IndexStyle(::Type{<:AbstractStructuredArray{T,N,S}}) where {T,N,S} = S()
 
 @inline function Base.getindex(A::StructuredArray{T,N,IndexLinear},
-                               i::Int) :: T where {T,N}
+                               i::Int) where {T,N}
     @boundscheck checkbounds(A, i)
-    return A.func(i)
+    return convert(T, A.func(i))::T
 end
 
 @inline function Base.getindex(A::StructuredArray{T,N,IndexCartesian},
-                               inds::Vararg{Int,N}) :: T where {T,N}
+                               inds::Vararg{Int,N}) where {T,N}
     @boundscheck checkbounds(A, inds...)
-    return A.func(inds...)
+    return convert(T, A.func(inds...))::T
 end
 
 getval(A::FastUniformArray{T,N,V}) where {T,N,V} = V

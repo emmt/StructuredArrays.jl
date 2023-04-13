@@ -2,6 +2,10 @@
 
 ## Version 0.2.7
 
+- Element type `T` of an instance `A` of `StructuredArray{T,N}` is used to
+  convert the value returned by the embedded function, say `func`, so `A[i...]`
+  evaluates to `convert(T,func(i...))::T`.
+
 - Fix `A[i]` result for a uniform array `A` when index `i` is not a single integer.
 
 - `A[:]` and `A[r]` are optimized for a uniform array `A` and a range `r`.
