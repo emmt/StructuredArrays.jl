@@ -294,18 +294,16 @@ getval(A::AbstractUniformArray) = getfield(A, :val)
     return getval(A)
 end
 
-for cls in (:UniformArray, :FastUniformArray, :MutableUniformArray)
-    @eval begin
-        Base.getindex(A::$cls, ::Colon) = $cls(getval(A), length(A))
-        @inline function Base.getindex(A::$cls, r::OrdinalRange{<:Integer,<:Integer})
-            len = length(r)
-            @boundscheck if len > 0
-                minimum(r) < firstindex(A) && throw(BoundsError(A, minimum(r)))
-                maximum(r) > lastindex(A) && throw(BoundsError(A, maximum(r)))
-            end
-            return $cls(getval(A), len)
-        end
+Base.getindex(A::AbstractUniformArray, ::Colon) =
+    parameterless(typeof(A))(getval(A), length(A))
+
+@inline function Base.getindex(A::AbstractUniformArray, r::OrdinalRange{<:Integer,<:Integer})
+    len = length(r)
+    @boundscheck if len > 0
+        minimum(r) < firstindex(A) && throw(BoundsError(A, minimum(r)))
+        maximum(r) > lastindex(A) && throw(BoundsError(A, maximum(r)))
     end
+    return parameterless(typeof(A))(getval(A), len)
 end
 
 @inline function Base.setindex!(A::MutableUniformArray, x, i::Int)
@@ -348,5 +346,23 @@ function checksize(dims::NTuple{N,Integer}) where {N}
     flag || throw(ArgumentError("invalid array dimensions"))
     return len
 end
+
+"""
+    StructuredArrays.parameterless(T)
+
+yields the type `T` without parameter specifications. For example:
+
+```julia
+julia> StructuredArrays.parameterless(Vector{Float32})
+Array
+```
+
+"""
+@inline parameterless(::Type{T}) where {T} =
+    # NOTE: In old versions of Julia, the field name was `:primary`, but since
+    #       Julia 1.0, it should be `:wrapper`.
+    #
+    #       See https://stackoverflow.com/questions/42229901/getting-the-parameter-less-type
+    getfield(getfield(T, :name), :wrapper)
 
 end # module

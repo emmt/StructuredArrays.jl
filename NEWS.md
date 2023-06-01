@@ -1,5 +1,11 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.8
+
+- New non-exported method `StructuredArrays.parameterless(T)` which yields type
+  `T` without parameter specifications. For example:
+  `StructuredArrays.parameterless(Vector{Float32})` yields `Array`.
+
 ## Version 0.2.7
 
 - Element type `T` of an instance `A` of `StructuredArray{T,N}` is used to
@@ -19,7 +25,7 @@
   immutable uniform arrays but with the elements value being part of the
   signature so that this value is known at compile time.
 
-- A few optimizations for uniform arrays of booleans.
+- A few optimizations for uniform arrays of Booleans.
 
 
 ## Version 0.2.3
