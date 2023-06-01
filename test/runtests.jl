@@ -120,7 +120,7 @@ using StructuredArrays: checksize, subarraysize
             @test b === first(A)
             @test b === A[0x1,2,3]
         end
-        let B = @inferred A[:,:,:]
+        let B = A[:,:,:]
             @test B isa typeof(A)
             @test size(B) == size(A)
             @test last(B) === first(A)
@@ -143,7 +143,7 @@ using StructuredArrays: checksize, subarraysize
             @test length(B) == length(A)
             @test all(isequal(first(B)), B)
             @test B[0x1] === B[1]
-            C = @inferred B[:]
+            C = B[:]
             @test typeof(C) === typeof(B)
             @test length(C) == length(B)
             @test all(isequal(first(C)), C)
