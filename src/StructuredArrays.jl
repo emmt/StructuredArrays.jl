@@ -31,6 +31,8 @@ export
 using ArrayTools
 import Base: @propagate_inbounds
 
+const SubArrayRange = Union{Integer,OrdinalRange{<:Integer,<:Integer},Colon}
+
 abstract type AbstractStructuredArray{T,N,S<:IndexStyle} <:
     AbstractArray{T,N} end
 
@@ -289,12 +291,28 @@ end
 getval(A::FastUniformArray{T,N,V}) where {T,N,V} = V
 getval(A::AbstractUniformArray) = getfield(A, :val)
 
-@inline function Base.getindex(A::AbstractUniformArray, i::Int)
+@inline function Base.getindex(A::AbstractUniformArray, i::Integer)
     @boundscheck checkbounds(A, i)
     return getval(A)
 end
 
+@inline function Base.getindex(A::AbstractUniformArray{<:Any,N},
+                               I::Vararg{Integer,N}) where {N}
+    # NOTE: This version is needed to avoid stack overflows.
+    @boundscheck checkbounds(A, I...)
+    return getval(A)
+end
+
+@inline function Base.getindex(A::AbstractUniformArray{<:Any,N},
+                               I::Vararg{SubArrayRange,N}) where {N}
+    @boundscheck checkbounds(A, I...)
+    return parameterless(typeof(A))(getval(A), subarraysize((), size(A), I...))
+end
+
 Base.getindex(A::AbstractUniformArray, ::Colon) =
+    parameterless(typeof(A))(getval(A), length(A))
+Base.getindex(A::AbstractUniformVector, ::Colon) =
+    # NOTE: This version is needed to avoid ambiguities.
     parameterless(typeof(A))(getval(A), length(A))
 
 @inline function Base.getindex(A::AbstractUniformArray, r::OrdinalRange{<:Integer,<:Integer})
@@ -327,6 +345,18 @@ end
 
 @noinline not_all_elements() =
     error("all elements must be set at the same time")
+
+# `subarraysize(a,b,c...)` recursively extracts sub-array dimensions. `a` is the
+# tuple of currently extracted dimensions, `a` is the tuple of remaining
+# original array dimensions, and `c...` are the remaining (unparsed) sub-array
+# indices.
+@inline subarraysize(a::Tuple, b::Tuple{}) = a
+@inline subarraysize(a::Tuple, b::Tuple, i::Integer, c...) =
+    subarraysize(a, Base.tail(b), c...)
+@inline subarraysize(a::Tuple, b::Tuple, r::OrdinalRange{<:Integer,<:Integer}, c...) =
+    subarraysize((a..., length(r)), Base.tail(b), c...)
+@inline subarraysize(a::Tuple, b::Tuple, ::Colon, c...) =
+    subarraysize((a..., first(b)), Base.tail(b), c...)
 
 """
     StructuredArrays.checksize(dims) -> len

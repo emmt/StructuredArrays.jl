@@ -1,19 +1,29 @@
 module TestStructuredArrays
 
 using Test, ArrayTools, StructuredArrays
-using StructuredArrays: checksize
+using StructuredArrays: checksize, subarraysize
 
 @testset "StructuredArrays package" begin
 
     @testset "Utilities" begin
         dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
+
         @test to_size(dims) === map(Int, dims)
         @test to_size(dims) === map(to_int, dims)
         @test to_size(dims[2]) === (to_int(dims[2]),)
+
         @test checksize(()) == 1
         @test checksize((0x4, Int16(11))) == 44
         @test checksize((0x4, Int16(11), 0)) == 0
         @test_throws ArgumentError checksize((0x4, Int16(-11)))
+
+        @test () === @inferred subarraysize((), (), ()...)
+        @test () === @inferred subarraysize((), (2,), (1,)...)
+        @test (3,4) === @inferred subarraysize((), (2,3,4), (1,:,:)...)
+        @test (3,4) === @inferred subarraysize((), (2,3,4), (1,:,1:4)...)
+        @test (2,4) === @inferred subarraysize((), (2,3,4), (:,2,1:4)...)
+        @test (1,3) === @inferred subarraysize((), (2,3,4), (2:2,2,2:4)...)
+        @test (2,3,4) === @inferred subarraysize((), (2,3,4), (:,:,:)...)
     end
 
     @testset "Uniform arrays ($K)" for K in (UniformArray,
@@ -103,6 +113,41 @@ using StructuredArrays: checksize
         r = firstindex(A):firstindex(A)-1
         @test A[r] isa V{eltype(A)}
         @test length(A[r]) == 0
+
+        # Sub-uniform array is a uniform array (or a scalar).
+        let b = @inferred A[1,2,3]
+            @test b isa eltype(A)
+            @test b === first(A)
+            @test b === A[0x1,2,3]
+        end
+        let B = @inferred A[:,:,:]
+            @test B isa typeof(A)
+            @test size(B) == size(A)
+            @test last(B) === first(A)
+        end
+        let B = A[:,2,2:end]
+            @test B isa K{eltype(A),ndims(A)-1}
+            @test size(B) == (size(A,1), size(A,3) - 1)
+            @test last(B) === first(A)
+        end
+        let B = A[1:end,2:end,3:end]
+            @test B isa K{eltype(A),ndims(A)}
+            @test size(B) == (size(A,1), size(A,2) - 1, size(A,3) - 2)
+            @test last(B) === first(A)
+        end
+
+        # Check ambiguities.
+        let B = A[:] # a uniform vector
+            @test eltype(B) === eltype(A)
+            @test ndims(B) == 1
+            @test length(B) == length(A)
+            @test all(isequal(first(B)), B)
+            @test B[0x1] === B[1]
+            C = @inferred B[:]
+            @test typeof(C) === typeof(B)
+            @test length(C) == length(B)
+            @test all(isequal(first(C)), C)
+        end
 
         # Array with zero dimensions.
         C = K{Int,0}(17)
