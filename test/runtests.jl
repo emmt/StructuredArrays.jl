@@ -1,7 +1,7 @@
 module TestStructuredArrays
 
 using Test, ArrayTools, StructuredArrays
-using StructuredArrays: checksize, subarraysize
+using StructuredArrays: checksize
 
 @testset "StructuredArrays package" begin
 
@@ -16,14 +16,6 @@ using StructuredArrays: checksize, subarraysize
         @test checksize((0x4, Int16(11))) == 44
         @test checksize((0x4, Int16(11), 0)) == 0
         @test_throws ArgumentError checksize((0x4, Int16(-11)))
-
-        @test () === @inferred subarraysize((), (), ()...)
-        @test () === @inferred subarraysize((), (2,), (1,)...)
-        @test (3,4) === @inferred subarraysize((), (2,3,4), (1,:,:)...)
-        @test (3,4) === @inferred subarraysize((), (2,3,4), (1,:,1:4)...)
-        @test (2,4) === @inferred subarraysize((), (2,3,4), (:,2,1:4)...)
-        @test (1,3) === @inferred subarraysize((), (2,3,4), (2:2,2,2:4)...)
-        @test (2,3,4) === @inferred subarraysize((), (2,3,4), (:,:,:)...)
     end
 
     @testset "Uniform arrays ($K)" for K in (UniformArray,
@@ -114,26 +106,67 @@ using StructuredArrays: checksize, subarraysize
         @test A[r] isa V{eltype(A)}
         @test length(A[r]) == 0
 
-        # Sub-uniform array is a uniform array (or a scalar).
-        let b = @inferred A[1,2,3]
-            @test b isa eltype(A)
-            @test b === first(A)
-            @test b === A[0x1,2,3]
-        end
-        let B = A[:,:,:]
-            @test B isa typeof(A)
-            @test size(B) == size(A)
-            @test last(B) === first(A)
-        end
-        let B = A[:,2,2:end]
-            @test B isa K{eltype(A),ndims(A)-1}
-            @test size(B) == (size(A,1), size(A,3) - 1)
-            @test last(B) === first(A)
-        end
-        let B = A[1:end,2:end,3:end]
-            @test B isa K{eltype(A),ndims(A)}
-            @test size(B) == (size(A,1), size(A,2) - 1, size(A,3) - 2)
-            @test last(B) === first(A)
+        # Sub-indexing a uniform array yields uniform array (or a scalar).
+        let B = Array(A)
+            @test B isa Array{eltype(A),ndims(A)}
+            funcs = A isa MutableUniformArray ? (getindex,) : (getindex, view)
+            @testset "sub-indexing ($f)" for f in funcs
+                let I = (1,2,3), X = f(A, I...), Y = f(B, I...)
+                    # should yield a scalar when sub-indexing
+                    @test X isa (f === getindex ? eltype(A) : K{eltype(A),ndims(Y)})
+                    @test X == Y
+                end
+                let I = (1,2,3,1,1), X = f(A, I...), Y = f(B, I...)
+                    # should yield a scalar when sub-indexing
+                    @test X isa (f === getindex ? eltype(A) : K{eltype(A),ndims(Y)})
+                    @test X == Y
+                end
+                # result is an array
+                let I = (1,2:2,3,1), X = f(A, I...), Y = f(B, I...)
+                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X == Y
+                end
+                let I = (1,2,3,1,1:1), X = f(A, I...), Y = f(B, I...)
+                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X == Y
+                end
+                let I = (1,2:2,3,1,1:1), X = f(A, I...), Y = f(B, I...)
+                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X == Y
+                end
+                let I = (:,), X = f(A, I...), Y = f(B, I...)
+                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X == Y
+                end
+                let I = (:,:,:), X = f(A, I...), Y = f(B, I...)
+                    @test typeof(X) === typeof(A)
+                    @test axes(X) === axes(A)
+                    @test X == Y
+                end
+                let I = ntuple(i -> i:size(A,i), ndims(A)), X = f(A, I...), Y = f(B, I...)
+                    @test typeof(X) === typeof(A)
+                    @test size(X) == map(length, I)
+                    @test X == Y
+                end
+                let I = (:,2,2:4), X = f(A, I...), Y = f(B, I...)
+                    @test X isa K{eltype(A),ndims(A)-1}
+                    @test X == Y
+                end
+                if VERSION ≥ v"1.6"
+                    let I = (:,[true false true],:), X = f(A, I...), Y = f(B, I...)
+                        @test X isa K{eltype(A),ndims(Y)}
+                        @test X == Y
+                    end
+                end
+                let I = (:,[2, 1, 2, 3],:), X = f(A, I...), Y = f(B, I...)
+                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X == Y
+                end
+                let I = (falses(size(A)),), X = f(A, I...), Y = f(B, I...)
+                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X == Y
+                end
+            end
         end
 
         # Check ambiguities.

@@ -2,8 +2,10 @@
 
 ## Version 0.2.8
 
-- Syntax `A[i...]`, with `A` a uniform array and `i...` sub-array indices,
-  yields a uniform array (or a scalar).
+- Syntax `A[i...]`, with `A` a **uniform array** and `i...` sub-array indices,
+  yields a uniform array (or a scalar). A similar optimization is done for
+  `view(A, i...)` with `A` an **immutable uniform array**. Note that `A[i...]`
+  may return a scalar, not `view(A, i...)`.
 
 - New non-exported method `StructuredArrays.parameterless(T)` which yields type
   `T` without parameter specifications. For example:

@@ -29,7 +29,7 @@ export
     UniformVector
 
 using ArrayTools
-import Base: @propagate_inbounds
+import Base: @propagate_inbounds, front, tail, to_indices
 
 const SubArrayRange = Union{Integer,OrdinalRange{<:Integer,<:Integer},Colon}
 
@@ -291,37 +291,22 @@ end
 getval(A::FastUniformArray{T,N,V}) where {T,N,V} = V
 getval(A::AbstractUniformArray) = getfield(A, :val)
 
-@inline function Base.getindex(A::AbstractUniformArray, i::Integer)
-    @boundscheck checkbounds(A, i)
-    return getval(A)
-end
-
-@inline function Base.getindex(A::AbstractUniformArray{<:Any,N},
-                               I::Vararg{Integer,N}) where {N}
-    # NOTE: This version is needed to avoid stack overflows.
+# This version yields a scalar.
+@inline function Base.getindex(A::AbstractUniformArray, I::Vararg{Integer})
     @boundscheck checkbounds(A, I...)
     return getval(A)
 end
 
-@inline function Base.getindex(A::AbstractUniformArray{<:Any,N},
-                               I::Vararg{SubArrayRange,N}) where {N}
-    @boundscheck checkbounds(A, I...)
-    return parameterless(typeof(A))(getval(A), subarraysize((), size(A), I...))
+# This version yields an array.
+@inline @propagate_inbounds function Base.getindex(A::AbstractUniformArray,
+                                                   I::Vararg{Any})
+    return subarray(A, I...)
 end
 
-Base.getindex(A::AbstractUniformArray, ::Colon) =
-    parameterless(typeof(A))(getval(A), length(A))
-Base.getindex(A::AbstractUniformVector, ::Colon) =
-    # NOTE: This version is needed to avoid ambiguities.
-    parameterless(typeof(A))(getval(A), length(A))
-
-@inline function Base.getindex(A::AbstractUniformArray, r::OrdinalRange{<:Integer,<:Integer})
-    len = length(r)
-    @boundscheck if len > 0
-        minimum(r) < firstindex(A) && throw(BoundsError(A, minimum(r)))
-        maximum(r) > lastindex(A) && throw(BoundsError(A, maximum(r)))
-    end
-    return parameterless(typeof(A))(getval(A), len)
+# Fast view for immutable uniform arrays, may return a 0-dimensional array.
+@inline @propagate_inbounds function Base.view(A::Union{UniformArray,FastUniformArray},
+                                               I::Vararg{Any})
+    return subarray(A, I...)
 end
 
 @inline function Base.setindex!(A::MutableUniformArray, x, i::Int)
@@ -346,17 +331,25 @@ end
 @noinline not_all_elements() =
     error("all elements must be set at the same time")
 
-# `subarraysize(a,b,c...)` recursively extracts sub-array dimensions. `a` is the
-# tuple of currently extracted dimensions, `a` is the tuple of remaining
-# original array dimensions, and `c...` are the remaining (unparsed) sub-array
-# indices.
-@inline subarraysize(a::Tuple, b::Tuple{}) = a
-@inline subarraysize(a::Tuple, b::Tuple, i::Integer, c...) =
-    subarraysize(a, Base.tail(b), c...)
-@inline subarraysize(a::Tuple, b::Tuple, r::OrdinalRange{<:Integer,<:Integer}, c...) =
-    subarraysize((a..., length(r)), Base.tail(b), c...)
-@inline subarraysize(a::Tuple, b::Tuple, ::Colon, c...) =
-    subarraysize((a..., first(b)), Base.tail(b), c...)
+@inline function subarray(A::AbstractUniformArray, I::Vararg{Any})
+    # NOTE: Since we are calling the `subarray` method to produce an object
+    # that is independent from `A`, it is not needed to unalias the result of
+    # `to_indices` from `A` as is done in Julia base code (in `subarray.jl`) to
+    # build views.
+    J = to_indices(A, I)
+    @boundscheck checkbounds(A, J...)
+    # NOTE: `to_indices` converts colons (`:`) into slices (`Base.Slice`) which
+    # are abstract unit ranges and thus abstract vectors of indices. So the
+    # only thing to do is to concatenate the sizes of the indices returned by
+    # `to_indices`.
+    dims = concat(size, J)
+    return parameterless(typeof(A))(getval(A), concat(size, J))
+end
+
+@inline concat(f::Function, x::Tuple) = concat((), f, x) # start recursion
+@inline concat(r::Tuple, f::Function, x::Tuple{}) = r    # finish recursion
+@inline concat(r::Tuple, f::Function, x::Tuple) =        # pursue recursion
+    concat((r..., f(first(x))...), f, tail(x))
 
 """
     StructuredArrays.checksize(dims) -> len
