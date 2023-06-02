@@ -1,11 +1,18 @@
 module TestStructuredArrays
 
 using Test, ArrayTools, StructuredArrays
-using StructuredArrays: checksize
+using StructuredArrays: checksize, parameterless
 
 @testset "StructuredArrays package" begin
 
     @testset "Utilities" begin
+        @test parameterless(Array) === Array
+        @test parameterless(AbstractVector) === AbstractArray
+        @test parameterless(DenseMatrix) === DenseArray
+        @test parameterless(Array{Float32}) === Array
+        @test parameterless(DenseArray{Float32,3}) === DenseArray
+        @test parameterless(Matrix{Float64}) === Array
+
         dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
 
         @test to_size(dims) === map(Int, dims)

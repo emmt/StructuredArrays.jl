@@ -380,12 +380,11 @@ julia> StructuredArrays.parameterless(Vector{Float32})
 Array
 ```
 
-"""
-@inline parameterless(::Type{T}) where {T} =
-    # NOTE: In old versions of Julia, the field name was `:primary`, but since
-    #       Julia 1.0, it should be `:wrapper`.
-    #
-    #       See https://stackoverflow.com/questions/42229901/getting-the-parameter-less-type
-    getfield(getfield(T, :name), :wrapper)
+""" parameterless
+# https://stackoverflow.com/questions/42229901/getting-the-parameter-less-type
+#
+# NOTE: In old versions of Julia, the field name was `:primary`, but since
+#       Julia 0.7, it should be `:wrapper`.
+@inline parameterless(::Type{T}) where {T} = getfield(Base.typename(T), :wrapper)
 
 end # module
