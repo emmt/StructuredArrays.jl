@@ -343,7 +343,7 @@ end
     # only thing to do is to concatenate the sizes of the indices returned by
     # `to_indices`.
     dims = concat(size, J)
-    return parameterless(typeof(A))(getval(A), concat(size, J))
+    return parameterless(typeof(A))(value(A), concat(size, J))
 end
 
 @inline concat(f::Function, x::Tuple) = concat((), f, x) # start recursion
