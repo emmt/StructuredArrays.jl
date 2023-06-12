@@ -1,5 +1,8 @@
 # User visible changes in `StructuredArrays` package
 
+- Non-exported method `StructuredArrays.value` can be applied to a uniform
+  array to retrieve the value of all its elements without indexing.
+
 ## Version 0.2.8
 
 - Syntax `A[i...]`, with `A` a **uniform array** and `i...` sub-array indices,

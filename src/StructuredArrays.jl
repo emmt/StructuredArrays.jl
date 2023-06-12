@@ -186,9 +186,8 @@ FastUniformArray{T,N}(val, dims::Dims{N}) where {T,N} =
     FastUniformArray{T,N}(convert(T, val)::T, dims)
 
 # Specialize some methods for (fast) uniform arrays of booleans.
-Base.all(A::AbstractUniformArray{Bool}) = first(A)
-Base.all(A::FastUniformArray{Bool,N,V}) where {N,V} = V
-Base.count(A::AbstractUniformArray{Bool}) = ifelse(first(A), length(A), 0)
+Base.all(A::AbstractUniformArray{Bool}) = value(A)
+Base.count(A::AbstractUniformArray{Bool}) = ifelse(value(A), length(A), 0)
 Base.count(A::FastUniformArray{Bool,N,true}) where {N} = length(A)
 Base.count(A::FastUniformArray{Bool,N,false}) where {N} = 0
 
@@ -288,13 +287,19 @@ end
     return convert(T, A.func(inds...))::T
 end
 
-getval(A::FastUniformArray{T,N,V}) where {T,N,V} = V
-getval(A::AbstractUniformArray) = getfield(A, :val)
+"""
+    StructuredArrays.value(A::AbstractUniformArray)
+
+yields the value of the elements of the uniform array `A`.
+
+"""
+value(A::FastUniformArray{T,N,V}) where {T,N,V} = V
+value(A::AbstractUniformArray) = getfield(A, :val)
 
 # This version yields a scalar.
 @inline function Base.getindex(A::AbstractUniformArray, I::Vararg{Integer})
     @boundscheck checkbounds(A, I...)
-    return getval(A)
+    return value(A)
 end
 
 # This version yields an array.
