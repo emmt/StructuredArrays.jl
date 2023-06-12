@@ -1,5 +1,14 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.3.0
+
+This version introduces some bug fixes and some incompatibilities:
+
+- Slicing of a uniform array no longer yields a uniform array although a view
+  does. Having syntax `A[i...]`, with `A` a uniform array and `i...` sub-array
+  indices, yields a uniform array was a bad idea that broke things like
+  broadcasting for uniform arrays.
+
 - Non-exported method `StructuredArrays.value` can be applied to a uniform
   array to retrieve the value of all its elements without indexing.
 

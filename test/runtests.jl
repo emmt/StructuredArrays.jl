@@ -100,17 +100,17 @@ using StructuredArrays: checksize, parameterless
             K === MutableUniformArray ? Int8(5) : nothing
         A = K(x, dims)
         @test A isa K{typeof(x)}
-        @test A[:] isa V{eltype(A)}
+        @test A[:] isa Array{eltype(A)}
         @test length(A[:]) == length(A)
         @test first(A[:]) === first(A)
         @test_throws BoundsError A[firstindex(A)-1:2:lastindex(A)]
         @test_throws BoundsError A[firstindex(A):2:lastindex(A)+1]
         r = firstindex(A):2:lastindex(A)
-        @test A[r] isa V{eltype(A)}
+        @test A[r] isa Array{eltype(A)}
         @test length(A[r]) == length(r)
         @test first(A[r]) == first(A)
         r = firstindex(A):firstindex(A)-1
-        @test A[r] isa V{eltype(A)}
+        @test A[r] isa Array{eltype(A)}
         @test length(A[r]) == 0
 
         # Sub-indexing a uniform array yields uniform array (or a scalar).
@@ -118,6 +118,7 @@ using StructuredArrays: checksize, parameterless
             @test B isa Array{eltype(A),ndims(A)}
             funcs = A isa MutableUniformArray ? (getindex,) : (getindex, view)
             @testset "sub-indexing ($f)" for f in funcs
+                R = f === getindex ? Array : K
                 let I = (1,2,3), X = f(A, I...), Y = f(B, I...)
                     # should yield a scalar when sub-indexing
                     @test X isa (f === getindex ? eltype(A) : K{eltype(A),ndims(Y)})
@@ -130,47 +131,47 @@ using StructuredArrays: checksize, parameterless
                 end
                 # result is an array
                 let I = (1,2:2,3,1), X = f(A, I...), Y = f(B, I...)
-                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X isa R{eltype(A),ndims(Y)}
                     @test X == Y
                 end
                 let I = (1,2,3,1,1:1), X = f(A, I...), Y = f(B, I...)
-                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X isa R{eltype(A),ndims(Y)}
                     @test X == Y
                 end
                 let I = (1,2:2,3,1,1:1), X = f(A, I...), Y = f(B, I...)
-                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X isa R{eltype(A),ndims(Y)}
                     @test X == Y
                 end
                 let I = (:,), X = f(A, I...), Y = f(B, I...)
-                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X isa R{eltype(A),ndims(Y)}
                     @test X == Y
                 end
                 let I = (:,:,:), X = f(A, I...), Y = f(B, I...)
-                    @test typeof(X) === typeof(A)
+                    @test X isa R{eltype(A),ndims(Y)}
                     @test axes(X) === axes(A)
                     @test X == Y
                 end
                 let I = ntuple(i -> i:size(A,i), ndims(A)), X = f(A, I...), Y = f(B, I...)
-                    @test typeof(X) === typeof(A)
+                    @test X isa R{eltype(A),ndims(Y)}
                     @test size(X) == map(length, I)
                     @test X == Y
                 end
                 let I = (:,2,2:4), X = f(A, I...), Y = f(B, I...)
-                    @test X isa K{eltype(A),ndims(A)-1}
+                    @test X isa R{eltype(A),ndims(A)-1}
                     @test X == Y
                 end
                 if VERSION ≥ v"1.6"
                     let I = (:,[true false true],:), X = f(A, I...), Y = f(B, I...)
-                        @test X isa K{eltype(A),ndims(Y)}
+                        @test X isa R{eltype(A),ndims(Y)}
                         @test X == Y
                     end
                 end
                 let I = (:,[2, 1, 2, 3],:), X = f(A, I...), Y = f(B, I...)
-                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X isa R{eltype(A),ndims(Y)}
                     @test X == Y
                 end
                 let I = (falses(size(A)),), X = f(A, I...), Y = f(B, I...)
-                    @test X isa K{eltype(A),ndims(Y)}
+                    @test X isa R{eltype(A),ndims(Y)}
                     @test X == Y
                 end
             end

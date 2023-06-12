@@ -296,16 +296,9 @@ yields the value of the elements of the uniform array `A`.
 value(A::FastUniformArray{T,N,V}) where {T,N,V} = V
 value(A::AbstractUniformArray) = getfield(A, :val)
 
-# This version yields a scalar.
-@inline function Base.getindex(A::AbstractUniformArray, I::Vararg{Integer})
-    @boundscheck checkbounds(A, I...)
+@inline function Base.getindex(A::AbstractUniformArray, i::Int)
+    @boundscheck checkbounds(A, i)
     return value(A)
-end
-
-# This version yields an array.
-@inline @propagate_inbounds function Base.getindex(A::AbstractUniformArray,
-                                                   I::Vararg{Any})
-    return subarray(A, I...)
 end
 
 # Fast view for immutable uniform arrays, may return a 0-dimensional array.
