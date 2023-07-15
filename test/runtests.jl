@@ -16,8 +16,8 @@ using StructuredArrays: checksize, parameterless
         dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
 
         @test Dims(dims) === map(Int, dims)
-        @test Dims(dims) === map(to_int, dims)
-        @test Dims(dims[2]) === (to_int(dims[2]),)
+        @test Dims(dims) === map(as(Int), dims)
+        @test Dims(dims[2]) === (as(Int, dims[2]),)
 
         @test checksize(()) == 1
         @test checksize((0x4, Int16(11))) == 44
