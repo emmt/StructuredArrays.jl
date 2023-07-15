@@ -28,7 +28,8 @@ export
     UniformMatrix,
     UniformVector
 
-using ArrayTools
+using TypeUtils
+
 import Base: @propagate_inbounds, front, tail, to_indices
 
 const SubArrayRange = Union{Integer,OrdinalRange{<:Integer,<:Integer},Colon}
@@ -173,11 +174,11 @@ end
 for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
         $cls(val::T, dims::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, to_size(dims))
+            $cls{T,N}(val, Dims(dims))
         $cls{T}(val, dims::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, to_size(dims))
+            $cls{T,N}(val, Dims(dims))
         $cls{T,N}(val, dims::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, to_size(dims))
+            $cls{T,N}(val, Dims(dims))
     end
 end
 
@@ -192,9 +193,9 @@ Base.count(A::FastUniformArray{Bool,N,true}) where {N} = length(A)
 Base.count(A::FastUniformArray{Bool,N,false}) where {N} = 0
 
 StructuredArray(func, dims::NTuple{N,Integer}) where {N} =
-    StructuredArray(IndexCartesian, func, to_size(dims))
+    StructuredArray(IndexCartesian, func, Dims(dims))
 StructuredArray{T}(func, dims::NTuple{N,Integer}) where {T,N} =
-    StructuredArray{T}(IndexCartesian, func, to_size(dims))
+    StructuredArray{T}(IndexCartesian, func, Dims(dims))
 StructuredArray{T,N}(func, dims::NTuple{N,Integer}) where {T,N} =
     StructuredArray{T}(func, dims)
 
@@ -229,7 +230,7 @@ function StructuredArray(::Union{S,Type{S}}, func,
 end
 function StructuredArray(::Union{S,Type{S}}, func,
                          dims::NTuple{N,Integer}) where {N,S<:IndexStyle}
-    StructuredArray(S, func, to_size(dims))
+    StructuredArray(S, func, Dims(dims))
 end
 
 function StructuredArray{T}(::Union{S,Type{S}}, func,
@@ -238,7 +239,7 @@ function StructuredArray{T}(::Union{S,Type{S}}, func,
 end
 function StructuredArray{T}(::Union{S,Type{S}}, func,
                             dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, func, to_size(dims))
+    StructuredArray{T}(S, func, Dims(dims))
 end
 
 function StructuredArray{T,N}(::Union{S,Type{S}}, func,
@@ -247,7 +248,7 @@ function StructuredArray{T,N}(::Union{S,Type{S}}, func,
 end
 function StructuredArray{T,N}(::Union{S,Type{S}}, func,
                               dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, func, to_size(dims))
+    StructuredArray{T}(S, func, Dims(dims))
 end
 
 function StructuredArray{T,N,S}(::Union{S,Type{S}}, func,
@@ -256,7 +257,7 @@ function StructuredArray{T,N,S}(::Union{S,Type{S}}, func,
 end
 function StructuredArray{T,N,S}(::Union{S,Type{S}}, func,
                                 dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, func, to_size(dims))
+    StructuredArray{T}(S, func, Dims(dims))
 end
 
 function StructuredArray{T,N,S}(func,
@@ -265,7 +266,7 @@ function StructuredArray{T,N,S}(func,
 end
 function StructuredArray{T,N,S}(func,
                                 dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, func, to_size(dims))
+    StructuredArray{T}(S, func, Dims(dims))
 end
 
 # See comments near `getindex` in `abstractarray.jl` for explanations about how
@@ -367,22 +368,5 @@ function checksize(dims::NTuple{N,Integer}) where {N}
     flag || throw(ArgumentError("invalid array dimensions"))
     return len
 end
-
-"""
-    StructuredArrays.parameterless(T)
-
-yields the type `T` without parameter specifications. For example:
-
-```julia
-julia> StructuredArrays.parameterless(Vector{Float32})
-Array
-```
-
-""" parameterless
-# https://stackoverflow.com/questions/42229901/getting-the-parameter-less-type
-#
-# NOTE: In old versions of Julia, the field name was `:primary`, but since
-#       Julia 0.7, it should be `:wrapper`.
-@inline parameterless(::Type{T}) where {T} = getfield(Base.typename(T), :wrapper)
 
 end # module

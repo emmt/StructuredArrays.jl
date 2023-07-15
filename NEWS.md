@@ -12,6 +12,11 @@ This version introduces some bug fixes and some incompatibilities:
 - Non-exported method `StructuredArrays.value` can be applied to a uniform
   array to retrieve the value of all its elements without indexing.
 
+Other changes:
+
+- Use `TypeUtils` instead of `ArrayTools`.
+
+
 ## Version 0.2.8
 
 - Syntax `A[i...]`, with `A` a **uniform array** and `i...` sub-array indices,
