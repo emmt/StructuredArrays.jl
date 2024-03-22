@@ -156,14 +156,20 @@ for (A, N) in ((:Vector, 1), (:Matrix, 2))
     end
 end
 
+# Specialize base abstract array methods for structured arrays.
+for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
+    @eval begin
+        Base.length(A::$cls) = getfield(A, :len)
+        Base.size(A::$cls) = getfield(A, :dims)
+    end
+end
+Base.axes(A::AbstractStructuredArray) = to_axes(size(A))
+
 # Specialize base abstract array methods for StructuredArray, UniformArray, and
 # MutableUniformArray and provide basic constructors to convert trailing
 # arguments to dimensions.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        Base.length(A::$cls) = getfield(A, :len)
-        Base.size(A::$cls) = getfield(A, :dims)
-
         $cls(arg1, dims::Integer...) = $cls(arg1, dims)
         $cls{T}(arg1, dims::Integer...) where {T} = $cls{T}(arg1, dims)
         $cls{T,N}(arg1, dims::Integer...) where {T,N} = $cls{T,N}(arg1, dims)
@@ -366,5 +372,14 @@ function checksize(dims::NTuple{N,Integer}) where {N}
     flag || throw(ArgumentError("invalid array dimensions"))
     return len
 end
+
+to_axis(rng::AbstractUnitRange{Int}) = rng
+to_axis(rng::AbstractUnitRange{<:Integer}) = convert_eltype(Int, rng)
+to_axis(dim::Integer) = Base.OneTo{Int}(dim)
+
+to_axes(::Tuple{}) = ()
+to_axes(inds::Tuple{Vararg{AbstractUnitRange{Int}}}) = inds
+to_axes(inds::Tuple{Vararg{AbstractUnitRange{<:Integer}}}) = map(to_axis, inds)
+to_axes(dims::Tuple{Vararg{Integer}}) = map(to_axis, dims)
 
 end # module
