@@ -270,7 +270,8 @@ yields the value of the elements of the uniform array `A`.
 
 """
 value(A::FastUniformArray{T,N,V}) where {T,N,V} = V
-value(A::AbstractUniformArray) = getfield(A, :val)
+value(A::UniformArray) = getfield(A, :val)
+value(A::MutableUniformArray) = getfield(A, :val)
 
 @inline function Base.getindex(A::AbstractUniformArray, i::Int)
     @boundscheck checkbounds(A, i)
