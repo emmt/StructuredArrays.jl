@@ -166,8 +166,14 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
     @eval begin
         Base.length(A::$cls) = prod(size(A))
         Base.size(A::$cls) = to_size(getfield(A, :inds))
+        Base.size(A::$cls, i::Integer) =
+            i > ndims(A) ? 1 :
+            i > zero(i) ? to_dim(getfield(A, :inds)[i]) : throw(BoundsError(size(A), i))
         Base.axes(A::$cls) = to_axes(getfield(A, :inds))
-    end
+        Base.axes(A::$cls, i::Integer) =
+            i > ndims(A) ? Base.OneTo(1) :
+            i > zero(i) ? to_axis(getfield(A, :inds)[i]) : throw(BoundsError(axes(A), i))
+     end
 end
 
 # Constructors that convert trailing argument(s) to array dimensions or axes.
@@ -375,6 +381,7 @@ checked_size(::Tuple{}) = ()
 
 to_dim(dim::Int) = dim
 to_dim(dim::Integer) = Int(dim)
+to_dim(rng::AbstractUnitRange{<:Integer}) = length(rng)::Int
 
 to_size(::Tuple{}) = ()
 to_size(dims::Dims) = dims
