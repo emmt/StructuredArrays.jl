@@ -1,6 +1,12 @@
 # User visible changes in `StructuredArrays` package
 
-## Version 0.3.0
+## Version 0.2.10
+
+- More uniform and consistent API for constructors, using `@eval` to encode
+  most constructors and aliases.
+
+
+## Version 0.2.9
 
 This version introduces some bug fixes and some incompatibilities:
 
@@ -16,6 +22,8 @@ Other changes:
 
 - Use `TypeUtils` instead of `ArrayTools`.
 
+- Fix compatibility.
+
 
 ## Version 0.2.8
 
@@ -27,6 +35,7 @@ Other changes:
 - New non-exported method `StructuredArrays.parameterless(T)` which yields type
   `T` without parameter specifications. For example:
   `StructuredArrays.parameterless(Vector{Float32})` yields `Array`.
+
 
 ## Version 0.2.7
 

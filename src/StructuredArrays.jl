@@ -60,7 +60,7 @@ struct UniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
     dims::Dims{N}
     val::T
-    UniformArray{T,N}(val, dims::Dims{N}) where {T,N} =
+    UniformArray{T}(val, dims::Dims{N}) where {T,N} =
         new{T,N}(checksize(dims), dims, val)
 end
 
@@ -76,8 +76,8 @@ time. A typical use is to create all true/false masks.
 struct FastUniformArray{T,N,V} <: AbstractUniformArray{T,N}
     len::Int
     dims::Dims{N}
-    FastUniformArray{T,N}(val::T, dims::Dims{N}) where {T,N} =
-        new{T,N,val}(checksize(dims), dims)
+    FastUniformArray{T}(val, dims::Dims{N}) where {T,N} =
+        new{T,N,as(T,val)}(checksize(dims), dims)
 end
 
 """
@@ -100,7 +100,7 @@ mutable struct MutableUniformArray{T,N} <: AbstractUniformArray{T,N}
     len::Int
     dims::Dims{N}
     val::T
-    MutableUniformArray{T,N}(val, dims::Dims{N}) where {T,N} =
+    MutableUniformArray{T}(val, dims::Dims{N}) where {T,N} =
         new{T,N}(checksize(dims), dims, val)
 end
 
@@ -140,7 +140,7 @@ struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
     len::Int
     dims::Dims{N}
     func::F
-    StructuredArray{T,N,S,F}(func, dims::Dims{N}) where {T,N,S,F} =
+    StructuredArray{T,N,S}(func::F, dims::Dims{N}) where {T,N,S<:IndexStyle,F} =
         new{T,N,S,F}(checksize(dims), dims, func)
 end
 
@@ -165,59 +165,71 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
 end
 Base.axes(A::AbstractStructuredArray) = to_axes(size(A))
 
-# Specialize base abstract array methods for StructuredArray, UniformArray, and
-# MutableUniformArray and provide basic constructors to convert trailing
-# arguments to dimensions.
+# Constructors that convert trailing argument(s) to array dimensions.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        $cls(arg1, dims::Integer...) = $cls(arg1, dims)
-        $cls{T}(arg1, dims::Integer...) where {T} = $cls{T}(arg1, dims)
-        $cls{T,N}(arg1, dims::Integer...) where {T,N} = $cls{T,N}(arg1, dims)
+        $cls(     arg1, args::Integer...)             = $cls(     arg1, args)
+        $cls{T}(  arg1, args::Integer...) where {T}   = $cls{T}(  arg1, args)
+        $cls{T,N}(arg1, args::Integer...) where {T,N} = $cls{T,N}(arg1, args)
+
+        $cls(     arg1, args::NTuple{N,Integer}) where {  N} = $cls(   arg1, to_size(args))
+        $cls{T}(  arg1, args::NTuple{N,Integer}) where {T,N} = $cls{T}(arg1, to_size(args))
+        $cls{T,N}(arg1, args::NTuple{N,Integer}) where {T,N} = $cls{T}(arg1, to_size(args))
+    end
+    if cls === :StructuredArray
+        @eval begin
+            $cls(::Union{S,Type{S}}, func, args::Integer...) where {S<:IndexStyle} =
+                $cls(S, func, args)
+            $cls{T}(::Union{S,Type{S}}, func, args::Integer...) where {T,S<:IndexStyle} =
+                $cls{T}(S, func, args)
+            $cls{T,N}(::Union{S,Type{S}}, func, args::Integer...) where {T,N,S<:IndexStyle} =
+                $cls{T,N,S}(func, args)
+            $cls{T,N,S}(::Union{S,Type{S}}, func, args::Integer...) where {T,N,S<:IndexStyle} =
+                $cls{T,N,S}(func, args)
+            $cls{T,N,S}(func, args::Integer...) where {T,N,S<:IndexStyle} =
+                $cls{T,N,S}(func, args)
+
+            $cls(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {N,S<:IndexStyle} =
+                $cls(S, func, to_size(args))
+            $cls{T}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:IndexStyle} =
+                $cls{T}(S, func, to_size(args))
+            $cls{T,N}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:IndexStyle} =
+                $cls{T,N,S}(func, to_size(args))
+            $cls{T,N,S}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:IndexStyle} =
+                $cls{T,N,S}(func, to_size(args))
+            $cls{T,N,S}(func, args::NTuple{N,Integer}) where {T,N,S<:IndexStyle} =
+                $cls{T,N,S}(func, to_size(args))
+        end
     end
 end
+
+# Default index style is Cartesian for StructuredArray.
+let cls = :StructuredArray
+    @eval begin
+        $cls(func, args::Dims{N}) where {N} = $cls(IndexCartesian, func, args)
+        $cls{T}(func, args::Dims{N}) where {T,N} = $cls{T,N}(IndexCartesian, func, args)
+        $cls{T,N}(func, args::Dims{N}) where {T,N} = $cls{T,N,S}(IndexCartesian, func, args)
+    end
+end
+
+# Constructors that manage to call the inner constructors.
 for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        $cls(val::T, dims::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, Dims(dims))
-        $cls{T}(val, dims::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, Dims(dims))
-        $cls{T,N}(val, dims::NTuple{N,Integer}) where {T,N} =
-            $cls{T,N}(val, Dims(dims))
+        $cls(val::T, args::Dims{N}) where {T,N} = $cls{T}(val, args)
+        $cls{T,N}(val, args::Dims{N}) where {T,N} = $cls{T}(val, args)
     end
 end
-
-# Make sure value has correct type.
-FastUniformArray{T,N}(val, dims::Dims{N}) where {T,N} =
-    FastUniformArray{T,N}(convert(T, val)::T, dims)
-
-# Specialize some methods for (fast) uniform arrays of booleans.
-Base.all(A::AbstractUniformArray{Bool}) = value(A)
-Base.count(A::AbstractUniformArray{Bool}) = ifelse(value(A), length(A), 0)
-Base.count(A::FastUniformArray{Bool,N,true}) where {N} = length(A)
-Base.count(A::FastUniformArray{Bool,N,false}) where {N} = 0
-
-StructuredArray(func, dims::NTuple{N,Integer}) where {N} =
-    StructuredArray(IndexCartesian, func, Dims(dims))
-StructuredArray{T}(func, dims::NTuple{N,Integer}) where {T,N} =
-    StructuredArray{T}(IndexCartesian, func, Dims(dims))
-StructuredArray{T,N}(func, dims::NTuple{N,Integer}) where {T,N} =
-    StructuredArray{T}(func, dims)
-
-# All constructors for StructuredArray are based on the 2 first ones (only
-# depending on whether parameter T is provided or not) so the other constructors
-# just make sure and arguments have correct type.
-
-function StructuredArray(::Type{S},
-                         func::F,
-                         dims::Dims{N}) where {N,S<:IndexStyle,F}
-    T = guess_eltype(func, S, Val(N))
-    StructuredArray{T,N,S,F}(func, dims)
-end
-
-function StructuredArray{T}(::Type{S},
-                            func::F,
-                            dims::Dims{N}) where {T,N,S<:IndexStyle,F}
-    StructuredArray{T,N,S,F}(func, dims)
+let cls = :StructuredArray
+    @eval begin
+       function $cls(::Union{S,Type{S}}, func, args::Dims{N}) where {N,S<:IndexStyle}
+            T = guess_eltype(func, S, Val(N))
+            return $cls{T,N,S}(func, args)
+        end
+        $cls{T}(::Union{S,Type{S}}, func, args::Dims{N}) where {T,N,S<:IndexStyle} =
+            $cls{T,N,S}(func, args)
+        $cls{T,N}(::Union{S,Type{S}}, func, args::Dims{N}) where {T,N,S<:IndexStyle} =
+            $cls{T,N,S}(func, args)
+    end
 end
 
 guess_eltype(func, ::Type{IndexLinear}, ::Val{N}) where {N} =
@@ -226,52 +238,11 @@ guess_eltype(func, ::Type{IndexLinear}, ::Val{N}) where {N} =
 @generated guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
     :(Base.promote_op(func, $(ntuple(x -> Int, Val(N))...)))
 
-# Index style specified and size specified as a tuple or by trailing arguments.
-
-function StructuredArray(::Union{S,Type{S}}, func,
-                         dims::Integer...) where {S<:IndexStyle}
-    StructuredArray(S, func, dims)
-end
-function StructuredArray(::Union{S,Type{S}}, func,
-                         dims::NTuple{N,Integer}) where {N,S<:IndexStyle}
-    StructuredArray(S, func, Dims(dims))
-end
-
-function StructuredArray{T}(::Union{S,Type{S}}, func,
-                            dims::Integer...) where {T,S<:IndexStyle}
-    StructuredArray{T}(S, func, dims)
-end
-function StructuredArray{T}(::Union{S,Type{S}}, func,
-                            dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, func, Dims(dims))
-end
-
-function StructuredArray{T,N}(::Union{S,Type{S}}, func,
-                              dims::Integer...) where {T,N,S<:IndexStyle}
-    StructuredArray{T,N}(S, func, dims) # keep the N to check
-end
-function StructuredArray{T,N}(::Union{S,Type{S}}, func,
-                              dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, func, Dims(dims))
-end
-
-function StructuredArray{T,N,S}(::Union{S,Type{S}}, func,
-                                dims::Integer...) where {T,N,S<:IndexStyle}
-    StructuredArray{T,N}(S, func, dims) # keep the N to check
-end
-function StructuredArray{T,N,S}(::Union{S,Type{S}}, func,
-                                dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, func, Dims(dims))
-end
-
-function StructuredArray{T,N,S}(func,
-                                dims::Integer...) where {T,N,S<:IndexStyle}
-    StructuredArray{T,N}(S, func, dims) # keep the N to check
-end
-function StructuredArray{T,N,S}(func,
-                                dims::NTuple{N,Integer}) where {T,N,S<:IndexStyle}
-    StructuredArray{T}(S, func, Dims(dims))
-end
+# Specialize some methods for (fast) uniform arrays of booleans.
+Base.all(A::AbstractUniformArray{Bool}) = value(A)
+Base.count(A::AbstractUniformArray{Bool}) = ifelse(value(A), length(A), 0)
+Base.count(A::FastUniformArray{Bool,N,true}) where {N} = length(A)
+Base.count(A::FastUniformArray{Bool,N,false}) where {N} = 0
 
 # See comments near `getindex` in `abstractarray.jl` for explanations about how
 # `getindex` and `setindex!` methods are expected to be specialized depending
@@ -372,6 +343,15 @@ function checksize(dims::NTuple{N,Integer}) where {N}
     flag || throw(ArgumentError("invalid array dimensions"))
     return len
 end
+
+to_dim(dim::Int) = dim
+to_dim(dim::Integer) = Int(dim)
+
+to_size(::Tuple{}) = ()
+to_size(dims::Dims) = dims
+to_size(dims::Tuple{Vararg{Integer}}) = map(to_dim, dims)
+to_size(dim::Integer) = (to_dim(dim),)
+to_size(inds::Tuple{Vararg{AbstractUnitRange{<:Integer}}}) = map(length, inds)
 
 to_axis(rng::AbstractUnitRange{Int}) = rng
 to_axis(rng::AbstractUnitRange{<:Integer}) = convert_eltype(Int, rng)

@@ -1,7 +1,8 @@
 module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays
-using StructuredArrays: checksize, parameterless
+using StructuredArrays: checksize, parameterless, to_dim, to_size, to_axis, to_axes
+using Base: OneTo
 
 @testset "StructuredArrays package" begin
 
@@ -13,33 +14,32 @@ using StructuredArrays: checksize, parameterless
         @test parameterless(DenseArray{Float32,3}) === DenseArray
         @test parameterless(Matrix{Float64}) === Array
 
-        dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
-
-        @test Dims(dims) === map(Int, dims)
-        @test Dims(dims) === map(as(Int), dims)
-        @test Dims(dims[2]) === (as(Int, dims[2]),)
-
         @test checksize(()) == 1
         @test checksize((0x4, Int16(11))) == 44
         @test checksize((0x4, Int16(11), 0)) == 0
         @test_throws ArgumentError checksize((0x4, Int16(-11)))
 
-        let to_axis = StructuredArrays.to_axis,
-            to_axes = StructuredArrays.to_axes
-            OneTo = Base.OneTo
-            @test @inferred(to_axis(3)) === OneTo(3)
-            @test @inferred(to_axis(0x5)) === OneTo(5)
-            @test @inferred(to_axis(0:2)) === 0:2
-            @test @inferred(to_axis(0x0:0x7)) === 0:7
-            @test @inferred(to_axis(OneTo(0x8))) === OneTo(8)
-            @test @inferred(to_axis(OneTo(5))) === OneTo(5)
+        dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
 
-            @test @inferred(to_axes(())) === ()
-            @test @inferred(to_axes((2, 4, 7,))) === (OneTo(2), OneTo(4), OneTo(7),)
-            @test @inferred(to_axes((0x2, 4, Int16(7),))) === (OneTo(2), OneTo(4), OneTo(7),)
-            @test @inferred(to_axes((OneTo(2), 0:5, 0x1:0x9))) === (OneTo(2), 0:5, 1:9,)
-            @test @inferred(to_axes((OneTo(2), 0:5, 1:9,))) === (OneTo(2), 0:5, 1:9,)
-        end
+        @test @inferred(to_size(())) === ()
+        @test @inferred(to_size(dims)) === map(Int, dims)
+        @test @inferred(to_size(dims)) === map(as(Int), dims)
+        @test @inferred(to_size(dims)) === Dims(dims)
+        @test @inferred(to_size(dims[2])) === (as(Int, dims[2]),)
+        @test @inferred(to_size(Dims(dims))) === Dims(dims)
+
+        @test @inferred(to_axis(3)) === OneTo(3)
+        @test @inferred(to_axis(0x5)) === OneTo(5)
+        @test @inferred(to_axis(0:2)) === 0:2
+        @test @inferred(to_axis(0x0:0x7)) === 0:7
+        @test @inferred(to_axis(OneTo(0x8))) === OneTo(8)
+        @test @inferred(to_axis(OneTo(5))) === OneTo(5)
+
+        @test @inferred(to_axes(())) === ()
+        @test @inferred(to_axes((2, 4, 7,))) === (OneTo(2), OneTo(4), OneTo(7),)
+        @test @inferred(to_axes((0x2, 4, Int16(7),))) === (OneTo(2), OneTo(4), OneTo(7),)
+        @test @inferred(to_axes((OneTo(2), 0:5, 0x1:0x9))) === (OneTo(2), 0:5, 1:9,)
+        @test @inferred(to_axes((OneTo(2), 0:5, 1:9,))) === (OneTo(2), 0:5, 1:9,)
     end
 
     @testset "Uniform arrays ($K)" for K in (UniformArray,
