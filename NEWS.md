@@ -1,5 +1,10 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.11
+
+- Structured arrays no longer directly store their length.
+
+
 ## Version 0.2.10
 
 - More uniform and consistent API for constructors, using `@eval` to encode

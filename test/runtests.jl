@@ -1,7 +1,7 @@
 module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays
-using StructuredArrays: checksize, parameterless, to_dim, to_size, to_axis, to_axes
+using StructuredArrays: checked_size, parameterless, to_dim, to_size, to_axis, to_axes
 using Base: OneTo
 
 @testset "StructuredArrays package" begin
@@ -14,10 +14,11 @@ using Base: OneTo
         @test parameterless(DenseArray{Float32,3}) === DenseArray
         @test parameterless(Matrix{Float64}) === Array
 
-        @test checksize(()) == 1
-        @test checksize((0x4, Int16(11))) == 44
-        @test checksize((0x4, Int16(11), 0)) == 0
-        @test_throws ArgumentError checksize((0x4, Int16(-11)))
+        @test checked_size(()) == ()
+        @test checked_size((2,)) == (2,)
+        @test checked_size((4, 0, 1,)) == (4, 0, 1,)
+        @test_throws MethodError checked_size((0x4, Int16(11)))
+        @test_throws ArgumentError checked_size((4, -1, 1,))
 
         dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
 

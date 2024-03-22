@@ -46,7 +46,7 @@ abstract type AbstractUniformArray{T,N} <:
 
 yields an array `A` which behaves as an immutable array of size `dims` whose
 elements are all equal to `val`. The storage requirement is `O(1)` instead of
-`O(prod(dims))` for a usual array. The array dimensions may be specified as
+`O(length(A))` for a usual array `A`. The array dimensions may be specified as
 multiple arguments.
 
 Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
@@ -58,11 +58,10 @@ uniform array whose element value can be changed.
 
 """
 struct UniformArray{T,N} <: AbstractUniformArray{T,N}
-    len::Int
     dims::Dims{N}
     val::T
     UniformArray{T}(val, dims::Dims{N}) where {T,N} =
-        new{T,N}(checksize(dims), dims, val)
+        new{T,N}(checked_size(dims), val)
 end
 
 """
@@ -75,10 +74,9 @@ time. A typical use is to create all true/false masks.
 
 """
 struct FastUniformArray{T,N,V} <: AbstractUniformArray{T,N}
-    len::Int
     dims::Dims{N}
     FastUniformArray{T}(val, dims::Dims{N}) where {T,N} =
-        new{T,N,as(T,val)}(checksize(dims), dims)
+        new{T,N,as(T,val)}(checked_size(dims))
 end
 
 """
@@ -98,11 +96,10 @@ array whose element value cannot be changed.
 
 """
 mutable struct MutableUniformArray{T,N} <: AbstractUniformArray{T,N}
-    len::Int
     dims::Dims{N}
     val::T
     MutableUniformArray{T}(val, dims::Dims{N}) where {T,N} =
-        new{T,N}(checksize(dims), dims, val)
+        new{T,N}(checked_size(dims), val)
 end
 
 """
@@ -138,11 +135,10 @@ The element type, say `T`, may also be explicitely specified:
 
 """
 struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
-    len::Int
     dims::Dims{N}
     func::F
     StructuredArray{T,N,S}(func::F, dims::Dims{N}) where {T,N,S<:ConcreteIndexStyle,F} =
-        new{T,N,S,F}(checksize(dims), dims, func)
+        new{T,N,S,F}(checked_size(dims), func)
 end
 
 # Aliases.
@@ -160,7 +156,7 @@ end
 # Specialize base abstract array methods for structured arrays.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        Base.length(A::$cls) = getfield(A, :len)
+        Base.length(A::$cls) = prod(size(A))
         Base.size(A::$cls) = getfield(A, :dims)
     end
 end
@@ -328,22 +324,19 @@ end
     concat((r..., f(first(x))...), f, tail(x))
 
 """
-    StructuredArrays.checksize(dims) -> len
+    StructuredArrays.checked_size(dims) -> dims
 
-yields the number of elements of an array of size `dims` throwing an error if
-any dimension is invalid.
+throws an `ArgumentError` exception if `dims` is not a valid array list of
+dimensions amd returns `dims` otherwise.
 
 """
-function checksize(dims::NTuple{N,Integer}) where {N}
-    len = 1
+function checked_size(dims::Dims{N}) where {N}
     flag = true
     @inbounds for i in 1:N
-        dim = Int(dims[i])
-        flag &= dim ≥ 0
-        len *= dim
+        flag &= dims[i] ≥ 0
     end
-    flag || throw(ArgumentError("invalid array dimensions"))
-    return len
+    flag || throw(ArgumentError("invalid array dimension(s)"))
+    return dims
 end
 
 to_dim(dim::Int) = dim
