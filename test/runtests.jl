@@ -21,6 +21,7 @@ using Base: OneTo
         @test_throws ArgumentError checked_size((4, -1, 1,))
 
         dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
+        inds = (Int8(2):Int8(3), OneTo{Int8}(3), Int16(-2):Int16(1), 1:5, OneTo{Int16}(6))
 
         @test @inferred(to_size(())) === ()
         @test @inferred(to_size(dims)) === map(Int, dims)
@@ -28,6 +29,7 @@ using Base: OneTo
         @test @inferred(to_size(dims)) === Dims(dims)
         @test @inferred(to_size(dims[2])) === (as(Int, dims[2]),)
         @test @inferred(to_size(Dims(dims))) === Dims(dims)
+        @test @inferred(to_size(inds)) === Dims(dims)
 
         @test @inferred(to_axis(3)) === OneTo(3)
         @test @inferred(to_axis(0x5)) === OneTo(5)
@@ -235,23 +237,22 @@ using Base: OneTo
         T2 = typeof(f2(1,1))
         S1 = IndexLinear
         S2 = IndexCartesian
-        for k in 1:16
-            A = k ==  1 ? StructuredArray(S2, f2, dims) :
-                k ==  2 ? StructuredArray(S2(), f2, dims...) :
-                k ==  3 ? StructuredArray{T2}(S2(), f2, dims) :
-                k ==  4 ? StructuredArray{T2}(S2, f2, dims...) :
-                k ==  5 ? StructuredArray{T2,N}(S2, f2, dims) :
-                k ==  6 ? StructuredArray{T2,N}(S2(), f2, dims...) :
-                k ==  7 ? StructuredArray{T2,N,S2}(f2, dims) :
-                k ==  8 ? StructuredArray{T2,N,S2}(f2, dims...) :
-                k ==  9 ? StructuredArray{T2,N,S2}(S2, f2, dims) :
-                k == 10 ? StructuredArray{T2,N,S2}(S2(), f2, dims...) :
-                k == 11 ? StructuredArray(f2, dims) :
-                k == 12 ? StructuredArray(f2, dims...) :
-                k == 13 ? StructuredArray{T2}(f2, dims) :
-                k == 14 ? StructuredArray{T2}(f2, dims...) :
-                k == 15 ? StructuredArray{T2,N}(f2, dims) :
-                k == 16 ? StructuredArray{T2,N}(f2, dims...) : break
+        for A in (StructuredArray(S2, f2, dims),
+                  StructuredArray(S2(), f2, dims...),
+                  StructuredArray{T2}(S2(), f2, dims),
+                  StructuredArray{T2}(S2, f2, dims...),
+                  StructuredArray{T2,N}(S2, f2, to_size(dims)),
+                  StructuredArray{T2,N}(S2(), f2, dims...),
+                  StructuredArray{T2,N,S2}(f2, dims),
+                  StructuredArray{T2,N,S2}(f2, to_size(dims)...),
+                  StructuredArray{T2,N,S2}(S2, f2, dims),
+                  StructuredArray{T2,N,S2}(S2(), f2, dims...),
+                  StructuredArray(f2, dims),
+                  StructuredArray(f2, dims...),
+                  StructuredArray{T2}(f2, dims),
+                  StructuredArray{T2}(f2, dims...),
+                  StructuredArray{T2,N}(f2, dims),
+                  StructuredArray{T2,N}(f2, dims...),)
             @test eltype(A) === T2
             @test ndims(A) == N
             @test size(A) == dims
@@ -267,17 +268,16 @@ using Base: OneTo
             #@test_throws ErrorException A[1,1] = zero(T)
             @test_throws BoundsError A[0,1]
         end
-        for k in 1:16
-            A = (k ==  1 ? StructuredArray(S1, f1, dims) :
-                k ==  2 ? StructuredArray(S1(), f1, dims...) :
-                k ==  3 ? StructuredArray{T1}(S1(), f1, dims) :
-                k ==  4 ? StructuredArray{T1}(S1, f1, dims...) :
-                k ==  5 ? StructuredArray{T1,N}(S1, f1, dims) :
-                k ==  6 ? StructuredArray{T1,N}(S1(), f1, dims...) :
-                k ==  7 ? StructuredArray{T1,N,S1}(f1, dims) :
-                k ==  8 ? StructuredArray{T1,N,S1}(f1, dims...) :
-                k ==  9 ? StructuredArray{T1,N,S1}(S1, f1, dims) :
-                k == 10 ? StructuredArray{T1,N,S1}(S1(), f1, dims...) : break)
+        for A in (StructuredArray(S1, f1, dims),
+                  StructuredArray(S1(), f1, dims...),
+                  StructuredArray{T1}(S1(), f1, dims),
+                  StructuredArray{T1}(S1, f1, dims...),
+                  StructuredArray{T1,N}(S1, f1, dims),
+                  StructuredArray{T1,N}(S1(), f1, dims...),
+                  StructuredArray{T1,N,S1}(f1, dims),
+                  StructuredArray{T1,N,S1}(f1, dims...),
+                  StructuredArray{T1,N,S1}(S1, f1, dims),
+                  StructuredArray{T1,N,S1}(S1(), f1, dims...),)
             I = LinearIndices(A)
             @test eltype(A) === T1
             @test ndims(A) == N
