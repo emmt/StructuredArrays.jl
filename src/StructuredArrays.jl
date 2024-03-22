@@ -144,19 +144,17 @@ struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
         new{T,N,S,F}(checksize(dims), dims, func)
 end
 
-const AbstractStructuredVector{T,S} = AbstractStructuredArray{T,1,S}
-const StructuredVector{T,S,F} = StructuredArray{T,1,S,F}
-const AbstractUniformVector{T} = AbstractUniformArray{T,1}
-const MutableUniformVector{T} = MutableUniformArray{T,1}
-const UniformVector{T} = UniformArray{T,1}
-const FastUniformVector{T,V} = FastUniformArray{T,1,V}
-
-const AbstractStructuredMatrix{T,S} = AbstractStructuredArray{T,2,S}
-const StructuredMatrix{T,S,F} = StructuredArray{T,2,S,F}
-const AbstractUniformMatrix{T} = AbstractUniformArray{T,2}
-const MutableUniformMatrix{T} = MutableUniformArray{T,2}
-const UniformMatrix{T} = UniformArray{T,2}
-const FastUniformMatrix{T,V} = FastUniformArray{T,2,V}
+# Aliases.
+for (A, N) in ((:Vector, 1), (:Matrix, 2))
+    @eval begin
+        const $(Symbol("AbstractStructured",A)){T,S} = AbstractStructuredArray{T,$N,S}
+        const $(Symbol("AbstractUniform",A)){T} = AbstractUniformArray{T,$N}
+        const $(Symbol("MutableUniform",A)){T} = MutableUniformArray{T,$N}
+        const $(Symbol("Uniform",A)){T} = UniformArray{T,$N}
+        const $(Symbol("FastUniform",A)){T,V} = FastUniformArray{T,$N,V}
+        const $(Symbol("Structured",A)){T,S,F} = StructuredArray{T,$N,S,F}
+    end
+end
 
 # Specialize base abstract array methods for StructuredArray, UniformArray, and
 # MutableUniformArray and provide basic constructors to convert trailing
