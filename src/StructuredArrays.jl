@@ -293,13 +293,13 @@ Base.IndexStyle(::Type{<:AbstractStructuredArray{T,N,S}}) where {T,N,S} = S()
 @inline function Base.getindex(A::StructuredArray{T,N,IndexLinear},
                                i::Int) where {T,N}
     @boundscheck checkbounds(A, i)
-    return convert(T, A.func(i))::T
+    return @inbounds as(T, A.func(i))
 end
 
 @inline function Base.getindex(A::StructuredArray{T,N,IndexCartesian},
-                               inds::Vararg{Int,N}) where {T,N}
-    @boundscheck checkbounds(A, inds...)
-    return convert(T, A.func(inds...))::T
+                               I::Vararg{Int,N}) where {T,N}
+    @boundscheck checkbounds(A, I...)
+    return @inbounds as(T, A.func(I...))
 end
 
 """
@@ -311,6 +311,8 @@ yields the value of the elements of the uniform array `A`.
 value(A::FastUniformArray{T,N,V}) where {T,N,V} = V
 value(A::UniformArray) = getfield(A, :val)
 value(A::MutableUniformArray) = getfield(A, :val)
+
+setvalue!(A::MutableUniformArray{T}, x) where {T} = setfield!(A, :val, as(T, x))
 
 @inline function Base.getindex(A::AbstractUniformArray, i::Int)
     @boundscheck checkbounds(A, i)
@@ -324,22 +326,20 @@ end
 end
 
 @inline function Base.setindex!(A::MutableUniformArray, x, i::Int)
-    @boundscheck checkbounds(A, i)
-    (i == length(A) == 1) || not_all_elements()
-    A.val = x
+    i:i == eachindex(IndexLinear(), A) || not_all_elements()
+    setvalue!(A, x)
     return A
 end
 
-@inline function Base.setindex!(A::MutableUniformArray, x,
-                                i::AbstractUnitRange{<:Integer})
-    ((first(i) == 1) & (last(i) == length(A))) || not_all_elements()
-    A.val = x
+@inline function Base.setindex!(A::MutableUniformArray, x, rng::AbstractUnitRange{<:Integer})
+    rng == eachindex(IndexLinear(), A) || not_all_elements()
+    setvalue!(A, x)
     return A
 end
 
 @inline function Base.setindex!(A::MutableUniformArray, x, ::Colon)
-    A.val = x
-    A
+    setvalue!(A, x)
+    return A
 end
 
 @noinline not_all_elements() =
