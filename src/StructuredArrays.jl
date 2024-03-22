@@ -175,6 +175,10 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
             i > zero(i) ? to_axis(getfield(A, :inds)[i]) : throw(BoundsError(axes(A), i))
      end
 end
+Base.has_offset_axes(A::AbstractUniformArray{T,0,Tuple{}}) where {T} = false
+Base.has_offset_axes(A::AbstractUniformArray{T,N,Dims{N}}) where {T,N} = false
+Base.has_offset_axes(A::StructuredArray{T,0,S,F,Tuple{}}) where {T,S,F} = false
+Base.has_offset_axes(A::StructuredArray{T,N,S,F,Dims{N}}) where {T,N,S,F} = false
 
 # Constructors that convert trailing argument(s) to array dimensions or axes.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
