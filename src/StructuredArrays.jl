@@ -33,8 +33,9 @@ using TypeUtils
 import Base: @propagate_inbounds, front, tail, to_indices
 
 const SubArrayRange = Union{Integer,OrdinalRange{<:Integer,<:Integer},Colon}
+const ConcreteIndexStyle = Union{IndexLinear,IndexCartesian}
 
-abstract type AbstractStructuredArray{T,N,S<:IndexStyle} <:
+abstract type AbstractStructuredArray{T,N,S<:ConcreteIndexStyle} <:
     AbstractArray{T,N} end
 
 abstract type AbstractUniformArray{T,N} <:
@@ -140,7 +141,7 @@ struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
     len::Int
     dims::Dims{N}
     func::F
-    StructuredArray{T,N,S}(func::F, dims::Dims{N}) where {T,N,S<:IndexStyle,F} =
+    StructuredArray{T,N,S}(func::F, dims::Dims{N}) where {T,N,S<:ConcreteIndexStyle,F} =
         new{T,N,S,F}(checksize(dims), dims, func)
 end
 
@@ -178,26 +179,26 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
     end
     if cls === :StructuredArray
         @eval begin
-            $cls(::Union{S,Type{S}}, func, args::Integer...) where {S<:IndexStyle} =
+            $cls(::Union{S,Type{S}}, func, args::Integer...) where {S<:ConcreteIndexStyle} =
                 $cls(S, func, args)
-            $cls{T}(::Union{S,Type{S}}, func, args::Integer...) where {T,S<:IndexStyle} =
+            $cls{T}(::Union{S,Type{S}}, func, args::Integer...) where {T,S<:ConcreteIndexStyle} =
                 $cls{T}(S, func, args)
-            $cls{T,N}(::Union{S,Type{S}}, func, args::Integer...) where {T,N,S<:IndexStyle} =
+            $cls{T,N}(::Union{S,Type{S}}, func, args::Integer...) where {T,N,S<:ConcreteIndexStyle} =
                 $cls{T,N,S}(func, args)
-            $cls{T,N,S}(::Union{S,Type{S}}, func, args::Integer...) where {T,N,S<:IndexStyle} =
+            $cls{T,N,S}(::Union{S,Type{S}}, func, args::Integer...) where {T,N,S<:ConcreteIndexStyle} =
                 $cls{T,N,S}(func, args)
-            $cls{T,N,S}(func, args::Integer...) where {T,N,S<:IndexStyle} =
+            $cls{T,N,S}(func, args::Integer...) where {T,N,S<:ConcreteIndexStyle} =
                 $cls{T,N,S}(func, args)
 
-            $cls(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {N,S<:IndexStyle} =
+            $cls(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {N,S<:ConcreteIndexStyle} =
                 $cls(S, func, to_size(args))
-            $cls{T}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:IndexStyle} =
+            $cls{T}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:ConcreteIndexStyle} =
                 $cls{T}(S, func, to_size(args))
-            $cls{T,N}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:IndexStyle} =
+            $cls{T,N}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:ConcreteIndexStyle} =
                 $cls{T,N,S}(func, to_size(args))
-            $cls{T,N,S}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:IndexStyle} =
+            $cls{T,N,S}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:ConcreteIndexStyle} =
                 $cls{T,N,S}(func, to_size(args))
-            $cls{T,N,S}(func, args::NTuple{N,Integer}) where {T,N,S<:IndexStyle} =
+            $cls{T,N,S}(func, args::NTuple{N,Integer}) where {T,N,S<:ConcreteIndexStyle} =
                 $cls{T,N,S}(func, to_size(args))
         end
     end
@@ -221,13 +222,13 @@ for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
 end
 let cls = :StructuredArray
     @eval begin
-       function $cls(::Union{S,Type{S}}, func, args::Dims{N}) where {N,S<:IndexStyle}
+       function $cls(::Union{S,Type{S}}, func, args::Dims{N}) where {N,S<:ConcreteIndexStyle}
             T = guess_eltype(func, S, Val(N))
             return $cls{T,N,S}(func, args)
         end
-        $cls{T}(::Union{S,Type{S}}, func, args::Dims{N}) where {T,N,S<:IndexStyle} =
+        $cls{T}(::Union{S,Type{S}}, func, args::Dims{N}) where {T,N,S<:ConcreteIndexStyle} =
             $cls{T,N,S}(func, args)
-        $cls{T,N}(::Union{S,Type{S}}, func, args::Dims{N}) where {T,N,S<:IndexStyle} =
+        $cls{T,N}(::Union{S,Type{S}}, func, args::Dims{N}) where {T,N,S<:ConcreteIndexStyle} =
             $cls{T,N,S}(func, args)
     end
 end

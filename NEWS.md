@@ -5,6 +5,8 @@
 - More uniform and consistent API for constructors, using `@eval` to encode
   most constructors and aliases.
 
+- Index style parameter of structured arrays must be a concrete one:
+  `IndexLinear` or `IndexCartesian`.
 
 ## Version 0.2.9
 
