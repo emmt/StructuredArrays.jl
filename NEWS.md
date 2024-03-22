@@ -1,5 +1,10 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.12
+
+- Structured arrays may have offset axes.
+
+
 ## Version 0.2.11
 
 - Structured arrays no longer directly store their length.

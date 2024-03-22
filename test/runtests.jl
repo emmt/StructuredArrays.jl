@@ -49,7 +49,9 @@ using Base: OneTo
                                              FastUniformArray,
                                              MutableUniformArray)
         dims = (Int8(2), Int16(3), Int32(4))
-        @test Dims(dims) === map(Int, dims)
+        inds = (Int8(0):Int8(1), OneTo{Int16}(3), Int16(-2):Int16(1),)
+        @test to_size(dims) === map(Int, dims)
+        @test to_size(inds) === to_size(dims)
         N = length(dims)
         vals = (Float64(2.1), UInt32(7), UInt16(11),
                 Float32(-6.2), Float64(pi), Int16(-4))
@@ -62,30 +64,55 @@ using Base: OneTo
                 k == 4 ? K{T}(x, dims...) :
                 k == 5 ? K{T,N}(x, dims) :
                 k == 6 ? K{T,N}(x, dims...) : break
+            B = k == 1 ? K(x, inds) :
+                k == 2 ? K(x, inds...) :
+                k == 3 ? K{T}(x, inds) :
+                k == 4 ? K{T}(x, inds...) :
+                k == 5 ? K{T,N}(x, inds) :
+                k == 6 ? K{T,N}(x, inds...) : break
             @test eltype(A) === T
+            @test eltype(B) === T
             @test ndims(A) == N
+            @test ndims(B) == N
             @test size(A) == dims
+            @test size(B) == dims
             @test ntuple(i -> size(A,i), ndims(A)+1) == (size(A)..., 1)
+            @test ntuple(i -> size(B,i), ndims(B)+1) == (size(B)..., 1)
             @test_throws BoundsError size(A,0)
-            @test axes(A) === map(Base.OneTo, size(A))
+            @test_throws BoundsError size(B,0)
+            @test axes(A) === map(Base.OneTo{Int}, dims)
+            @test axes(B) === map(x -> convert_eltype(Int, x), inds)
             @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
+            @test ntuple(i -> axes(B,i), ndims(B)+1) == (axes(B)..., Base.OneTo(1))
             @test_throws BoundsError axes(A,0)
+            @test_throws BoundsError axes(B,0)
             @test Base.has_offset_axes(A) == false
+            @test Base.has_offset_axes(B) == true
             @test IndexStyle(A) === IndexLinear()
+            @test IndexStyle(B) === IndexLinear()
             @test IndexStyle(typeof(A)) === IndexLinear()
+            @test IndexStyle(typeof(B)) === IndexLinear()
             @test A == fill!(Array{T}(undef, size(A)), A[1])
             @test_throws Exception A[1] = zero(T)
+            @test_throws Exception B[1] = zero(T)
             @test_throws BoundsError A[0]
+            @test_throws BoundsError B[0]
             x -= one(x)
             if K <: MutableUniformArray
                 A[:] = x
                 @test all(isequal(x), A)
+                B[:] = x
+                @test all(isequal(x), B)
                 x -= one(x)
                 A[1:end] = x
                 @test A[end] == A[1] == x
+                B[1:end] = x
+                @test B[end] == B[1] == x
                 x -= one(x)
                 A[1:length(A)] = x
                 @test A[end] == A[1] == x
+                B[firstindex(B):lastindex(B)] = x
+                @test B[end] == B[firstindex(B)] == x
             else
                 @test_throws Exception A[:] = x
             end

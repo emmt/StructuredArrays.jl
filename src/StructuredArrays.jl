@@ -35,19 +35,24 @@ import Base: @propagate_inbounds, front, tail, to_indices
 const SubArrayRange = Union{Integer,OrdinalRange{<:Integer,<:Integer},Colon}
 const ConcreteIndexStyle = Union{IndexLinear,IndexCartesian}
 
-abstract type AbstractStructuredArray{T,N,S<:ConcreteIndexStyle} <:
-    AbstractArray{T,N} end
+# Type of array axes and union of array size or axes.
+const Axes{N} = NTuple{N,AbstractUnitRange{Int}}
+const DimsOrAxes{N} = Union{Dims{N},Axes{N}}
 
-abstract type AbstractUniformArray{T,N} <:
-    AbstractStructuredArray{T,N,IndexLinear} end
+abstract type AbstractStructuredArray{T,N,S<:ConcreteIndexStyle,I<:DimsOrAxes{N}} <: AbstractArray{T,N} end
+
+abstract type AbstractUniformArray{T,N,I<:DimsOrAxes{N}} <: AbstractStructuredArray{T,N,IndexLinear,I} end
 
 """
-    UniformArray(val, dims) -> A
+    UniformArray(val, args...) -> A
+    UniformArray{T}(val, args...) -> A
+    UniformArray{T,N}(val, args...) -> A
 
-yields an array `A` which behaves as an immutable array of size `dims` whose
-elements are all equal to `val`. The storage requirement is `O(1)` instead of
-`O(length(A))` for a usual array `A`. The array dimensions may be specified as
-multiple arguments.
+build an immutable array `A` whose elements are all equal to `val`. The storage
+requirement is `O(1)` instead of `O(length(A))` for a usual array `A`.
+Subsequent arguments `args...` define the size or the axes of the array.
+Optional parameters `T` and `N` are to specify the element type and the number
+of dimensions of the array.
 
 Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
 all linear indices `i` in the range `1:length(A)`.
@@ -57,65 +62,68 @@ considered as immutable. Call `MutableUniformArray(val,dims)` to create a
 uniform array whose element value can be changed.
 
 """
-struct UniformArray{T,N} <: AbstractUniformArray{T,N}
-    dims::Dims{N}
+struct UniformArray{T,N,I<:DimsOrAxes{N}} <: AbstractUniformArray{T,N,I}
+    inds::I
     val::T
-    UniformArray{T}(val, dims::Dims{N}) where {T,N} =
-        new{T,N}(checked_size(dims), val)
+    UniformArray{T}(val, inds::I) where {T,N,I<:DimsOrAxes{N}} =
+        new{T,N,I}(checked_size(inds), val)
 end
 
 """
-    FastUniformArray(val, dims) -> A
+    FastUniformArray(val, args...) -> A
+    FastUniformArray{T}(val, args...) -> A
+    FastUniformArray{T,N}(val, args...) -> A
 
-yields an immutable uniform array of size `dims` and whose elements are all
-equal to `val`. The difference with an instance of [`UniformArray`](@ref) is
-that `val` is part of the type signature so that `val` can be known at compile
-time. A typical use is to create all true/false masks.
+build an immutable uniform array `A` whose elements are all equal to `val`. The
+difference with an instance of [`UniformArray`](@ref) is that `val` is part of
+the type signature so that `val` can be known at compile time. A typical use is
+to create all true/false masks.
 
 """
-struct FastUniformArray{T,N,V} <: AbstractUniformArray{T,N}
-    dims::Dims{N}
-    FastUniformArray{T}(val, dims::Dims{N}) where {T,N} =
-        new{T,N,as(T,val)}(checked_size(dims))
+struct FastUniformArray{T,N,V,I<:DimsOrAxes{N}} <: AbstractUniformArray{T,N,I}
+    inds::I
+    FastUniformArray{T}(val, inds::I) where {T,N,I<:DimsOrAxes{N}} =
+        new{T,N,as(T,val),I}(checked_size(inds))
 end
 
 """
-    MutableUniformArray(val, dims) -> A
+    MutableUniformArray(val, args...) -> A
+    MutableUniformArray{T}(val, args...) -> A
+    MutableUniformArray{T,N}(val, args...) -> A
 
-yields an array `A` which behaves as a mutable array of size `dims` whose
-values are all `val`. The storage requirement is `O(1)` instead of
-`O(prod(dims))` for a usual array. The array dimensions may be specified as
-multiple arguments.
-
-Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
-all linear indices `i` in the range `1:length(A)`.
+build a mutable array `A` whose elements are initially all equal to `val`. The
+difference with an instance of [`UniformArray`](@ref) is that the uniform value
+can be changed.
 
 A statement like `A[i] = val` is allowed but changes the value of all the
 elements of `A`. Call `UniformArray(val,dims)` to create an immutable uniform
 array whose element value cannot be changed.
 
 """
-mutable struct MutableUniformArray{T,N} <: AbstractUniformArray{T,N}
-    dims::Dims{N}
+mutable struct MutableUniformArray{T,N,I<:DimsOrAxes{N}} <: AbstractUniformArray{T,N,I}
+    inds::I
     val::T
-    MutableUniformArray{T}(val, dims::Dims{N}) where {T,N} =
-        new{T,N}(checked_size(dims), val)
+    MutableUniformArray{T}(val, inds::I) where {T,N,I<:DimsOrAxes{N}} =
+        new{T,N,I}(checked_size(inds), val)
 end
 
 """
-    StructuredArray([S = IndexCartesian,] func, dims) -> A
+    StructuredArray([S = IndexCartesian,] func, args...) -> A
+    StructuredArray{T}([S = IndexCartesian,] func, args...) -> A
+    StructuredArray{T,N}([S = IndexCartesian,] func, args...) -> A
+    StructuredArray{T,N,S}(func, args...) -> A
 
-yields an array `A` which behaves as an array of size `dims` whose values are a
-given function, here `func`, of its indices: `A[i]` is computed as `func(i)`.
-The storage requirement is `O(1)` instead of `O(prod(dims))` for a usual array.
-The array dimensions may be specified as multiple arguments.
+build an array `A` whose values are a given function, here `func`, of its
+indices: `A[i]` is computed as `func(i)`. The storage requirement is `O(1)`
+instead of `O(lenght(A))` for a usual array. Subsequent arguments `args...`
+define the size or the axes of the array. Optional parameters `T`, `N`, and `S`
+are to specify the element type, the number of dimensions, and the type of the
+indexing style of the array. If specified as an argument not a type parameter,
+`S` may also be an instance of `IndexStyle`.
 
-The optional argument `S` may be used to specifiy another index style than the
-default `IndexCartesian`, for instance `IndexLinear`. If specified, `S` may be
-a sub-type of `IndexStyle` or an instance of such a sub-type. If `S` is
-`IndexCartesian` (the default), the function `func` will be called with `N`
-integer arguments, `N` being the number of dimensions. If `S` is
-`IndexCartesian`, the function `func` will be called with a single integer
+If indexing style is `IndexCartesian` (the default), the function `func` will
+be called with `N` integer arguments, `N` being the number of dimensions. If
+`S` is `IndexLinear`, the function `func` will be called with a single integer
 argument.
 
 For instance, the structure of a lower triangular matrix of size `m×n` would be
@@ -134,22 +142,22 @@ The element type, say `T`, may also be explicitely specified:
     StructuredArray{T}([S = IndexCartesian,] func, dims)
 
 """
-struct StructuredArray{T,N,S,F} <: AbstractStructuredArray{T,N,S}
-    dims::Dims{N}
+struct StructuredArray{T,N,S,F,I<:DimsOrAxes{N}} <: AbstractStructuredArray{T,N,S,I}
+    inds::I
     func::F
-    StructuredArray{T,N,S}(func::F, dims::Dims{N}) where {T,N,S<:ConcreteIndexStyle,F} =
-        new{T,N,S,F}(checked_size(dims), func)
+    StructuredArray{T,N,S}(func::F, inds::I) where {T,N,S<:ConcreteIndexStyle,F,I<:DimsOrAxes{N}} =
+        new{T,N,S,F,I}(checked_size(inds), func)
 end
 
 # Aliases.
 for (A, N) in ((:Vector, 1), (:Matrix, 2))
     @eval begin
-        const $(Symbol("AbstractStructured",A)){T,S} = AbstractStructuredArray{T,$N,S}
-        const $(Symbol("AbstractUniform",A)){T} = AbstractUniformArray{T,$N}
-        const $(Symbol("MutableUniform",A)){T} = MutableUniformArray{T,$N}
-        const $(Symbol("Uniform",A)){T} = UniformArray{T,$N}
-        const $(Symbol("FastUniform",A)){T,V} = FastUniformArray{T,$N,V}
-        const $(Symbol("Structured",A)){T,S,F} = StructuredArray{T,$N,S,F}
+        const $(Symbol("AbstractStructured",A)){T,S,I} = AbstractStructuredArray{T,$N,S,I}
+        const $(Symbol("AbstractUniform",A)){T,I} = AbstractUniformArray{T,$N,I}
+        const $(Symbol("MutableUniform",A)){T,I} = MutableUniformArray{T,$N,I}
+        const $(Symbol("Uniform",A)){T,I} = UniformArray{T,$N,I}
+        const $(Symbol("FastUniform",A)){T,V,I} = FastUniformArray{T,$N,V,I}
+        const $(Symbol("Structured",A)){T,S,F,I} = StructuredArray{T,$N,S,F,I}
     end
 end
 
@@ -157,45 +165,69 @@ end
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
         Base.length(A::$cls) = prod(size(A))
-        Base.size(A::$cls) = getfield(A, :dims)
+        Base.size(A::$cls) = to_size(getfield(A, :inds))
+        Base.axes(A::$cls) = to_axes(getfield(A, :inds))
     end
 end
-Base.axes(A::AbstractStructuredArray) = to_axes(size(A))
 
-# Constructors that convert trailing argument(s) to array dimensions.
+# Constructors that convert trailing argument(s) to array dimensions or axes.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
+    # 0-dimesional case.
     @eval begin
-        $cls(     arg1, args::Integer...)             = $cls(     arg1, args)
-        $cls{T}(  arg1, args::Integer...) where {T}   = $cls{T}(  arg1, args)
-        $cls{T,N}(arg1, args::Integer...) where {T,N} = $cls{T,N}(arg1, args)
-
-        $cls(     arg1, args::NTuple{N,Integer}) where {  N} = $cls(   arg1, to_size(args))
-        $cls{T}(  arg1, args::NTuple{N,Integer}) where {T,N} = $cls{T}(arg1, to_size(args))
-        $cls{T,N}(arg1, args::NTuple{N,Integer}) where {T,N} = $cls{T}(arg1, to_size(args))
+        $cls(     arg1)             = $cls(     arg1, ())
+        $cls{T}(  arg1) where {T}   = $cls{T}(  arg1, ())
+        $cls{T,N}(arg1) where {T,N} = $cls{T,N}(arg1, ())
     end
     if cls === :StructuredArray
         @eval begin
-            $cls(::Union{S,Type{S}}, func, args::Integer...) where {S<:ConcreteIndexStyle} =
-                $cls(S, func, args)
-            $cls{T}(::Union{S,Type{S}}, func, args::Integer...) where {T,S<:ConcreteIndexStyle} =
-                $cls{T}(S, func, args)
-            $cls{T,N}(::Union{S,Type{S}}, func, args::Integer...) where {T,N,S<:ConcreteIndexStyle} =
-                $cls{T,N,S}(func, args)
-            $cls{T,N,S}(::Union{S,Type{S}}, func, args::Integer...) where {T,N,S<:ConcreteIndexStyle} =
-                $cls{T,N,S}(func, args)
-            $cls{T,N,S}(func, args::Integer...) where {T,N,S<:ConcreteIndexStyle} =
-                $cls{T,N,S}(func, args)
+            $cls(::Union{S,Type{S}}, func) where {S<:ConcreteIndexStyle} =
+                $cls(S, func, ())
+            $cls{T}(::Union{S,Type{S}}, func) where {T,S<:ConcreteIndexStyle} =
+                $cls{T}(S, func, ())
+            $cls{T,0}(::Union{S,Type{S}}, func) where {T,S<:ConcreteIndexStyle} =
+                $cls{T,0,S}(func, ())
+            $cls{T,0,S}(::Union{S,Type{S}}, func) where {T,S<:ConcreteIndexStyle} =
+                $cls{T,0,S}(func, ())
+            $cls{T,0,S}(func) where {T,S<:ConcreteIndexStyle} =
+                $cls{T,0,S}(func, ())
+        end
+    end
+    # N-dimensional cases with N ≥ 1.
+    for (type, to) in ((Integer,                      :to_size),
+                       (AbstractUnitRange{<:Integer}, :to_axes))
+        @eval begin
+            $cls(     arg1, args::$type...)             = $cls(     arg1, args)
+            $cls{T}(  arg1, args::$type...) where {T}   = $cls{T}(  arg1, args)
+            $cls{T,N}(arg1, args::$type...) where {T,N} = $cls{T,N}(arg1, args)
 
-            $cls(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {N,S<:ConcreteIndexStyle} =
-                $cls(S, func, to_size(args))
-            $cls{T}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:ConcreteIndexStyle} =
-                $cls{T}(S, func, to_size(args))
-            $cls{T,N}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:ConcreteIndexStyle} =
-                $cls{T,N,S}(func, to_size(args))
-            $cls{T,N,S}(::Union{S,Type{S}}, func, args::NTuple{N,Integer}) where {T,N,S<:ConcreteIndexStyle} =
-                $cls{T,N,S}(func, to_size(args))
-            $cls{T,N,S}(func, args::NTuple{N,Integer}) where {T,N,S<:ConcreteIndexStyle} =
-                $cls{T,N,S}(func, to_size(args))
+            $cls(     arg1, args::NTuple{N,$type}) where {  N} = $cls(     arg1, $to(args))
+            $cls{T}(  arg1, args::NTuple{N,$type}) where {T,N} = $cls{T}(  arg1, $to(args))
+            $cls{T,N}(arg1, args::NTuple{N,$type}) where {T,N} = $cls{T,N}(arg1, $to(args))
+        end
+        if cls === :StructuredArray
+            @eval begin
+                $cls(::Union{S,Type{S}}, func, args::$type...) where {S<:ConcreteIndexStyle} =
+                    $cls(S, func, args)
+                $cls{T}(::Union{S,Type{S}}, func, args::$type...) where {T,S<:ConcreteIndexStyle} =
+                    $cls{T}(S, func, args)
+                $cls{T,N}(::Union{S,Type{S}}, func, args::$type...) where {T,N,S<:ConcreteIndexStyle} =
+                    $cls{T,N,S}(func, args)
+                $cls{T,N,S}(::Union{S,Type{S}}, func, args::$type...) where {T,N,S<:ConcreteIndexStyle} =
+                    $cls{T,N,S}(func, args)
+                $cls{T,N,S}(func, args::$type...) where {T,N,S<:ConcreteIndexStyle} =
+                    $cls{T,N,S}(func, args)
+
+                $cls(::Union{S,Type{S}}, func, args::NTuple{N,$type}) where {N,S<:ConcreteIndexStyle} =
+                    $cls(S, func, $to(args))
+                $cls{T}(::Union{S,Type{S}}, func, args::NTuple{N,$type}) where {T,N,S<:ConcreteIndexStyle} =
+                    $cls{T}(S, func, $to(args))
+                $cls{T,N}(::Union{S,Type{S}}, func, args::NTuple{N,$type}) where {T,N,S<:ConcreteIndexStyle} =
+                    $cls{T,N,S}(func, $to(args))
+                $cls{T,N,S}(::Union{S,Type{S}}, func, args::NTuple{N,$type}) where {T,N,S<:ConcreteIndexStyle} =
+                    $cls{T,N,S}(func, $to(args))
+                $cls{T,N,S}(func, args::NTuple{N,$type}) where {T,N,S<:ConcreteIndexStyle} =
+                    $cls{T,N,S}(func, $to(args))
+            end
         end
     end
 end
@@ -203,28 +235,28 @@ end
 # Default index style is Cartesian for StructuredArray.
 let cls = :StructuredArray
     @eval begin
-        $cls(func, args::Dims{N}) where {N} = $cls(IndexCartesian, func, args)
-        $cls{T}(func, args::Dims{N}) where {T,N} = $cls{T,N}(IndexCartesian, func, args)
-        $cls{T,N}(func, args::Dims{N}) where {T,N} = $cls{T,N,S}(IndexCartesian, func, args)
+        $cls(func, args::DimsOrAxes{N}) where {N} = $cls(IndexCartesian, func, args)
+        $cls{T}(func, args::DimsOrAxes{N}) where {T,N} = $cls{T,N}(IndexCartesian, func, args)
+        $cls{T,N}(func, args::DimsOrAxes{N}) where {T,N} = $cls{T,N}(IndexCartesian, func, args)
     end
 end
 
 # Constructors that manage to call the inner constructors.
 for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        $cls(val::T, args::Dims{N}) where {T,N} = $cls{T}(val, args)
-        $cls{T,N}(val, args::Dims{N}) where {T,N} = $cls{T}(val, args)
+        $cls(val::T, args::DimsOrAxes{N}) where {T,N} = $cls{T}(val, args)
+        $cls{T,N}(val, args::DimsOrAxes{N}) where {T,N} = $cls{T}(val, args)
     end
 end
 let cls = :StructuredArray
     @eval begin
-       function $cls(::Union{S,Type{S}}, func, args::Dims{N}) where {N,S<:ConcreteIndexStyle}
+        function $cls(::Union{S,Type{S}}, func, args::DimsOrAxes{N}) where {N,S<:ConcreteIndexStyle}
             T = guess_eltype(func, S, Val(N))
             return $cls{T,N,S}(func, args)
         end
-        $cls{T}(::Union{S,Type{S}}, func, args::Dims{N}) where {T,N,S<:ConcreteIndexStyle} =
+        $cls{T}(::Union{S,Type{S}}, func, args::DimsOrAxes{N}) where {T,N,S<:ConcreteIndexStyle} =
             $cls{T,N,S}(func, args)
-        $cls{T,N}(::Union{S,Type{S}}, func, args::Dims{N}) where {T,N,S<:ConcreteIndexStyle} =
+        $cls{T,N}(::Union{S,Type{S}}, func, args::DimsOrAxes{N}) where {T,N,S<:ConcreteIndexStyle} =
             $cls{T,N,S}(func, args)
     end
 end
@@ -324,10 +356,10 @@ end
     concat((r..., f(first(x))...), f, tail(x))
 
 """
-    StructuredArrays.checked_size(dims) -> dims
+    StructuredArrays.checked_size(inds) -> inds
 
-throws an `ArgumentError` exception if `dims` is not a valid array list of
-dimensions amd returns `dims` otherwise.
+throws an `ArgumentError` exception if `inds` is not a valid array size
+or array axes amd returns `inds` otherwise.
 
 """
 function checked_size(dims::Dims{N}) where {N}
@@ -338,6 +370,8 @@ function checked_size(dims::Dims{N}) where {N}
     flag || throw(ArgumentError("invalid array dimension(s)"))
     return dims
 end
+checked_size(inds::Axes) = inds
+checked_size(::Tuple{}) = ()
 
 to_dim(dim::Int) = dim
 to_dim(dim::Integer) = Int(dim)

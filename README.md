@@ -23,12 +23,14 @@ All elements of a uniform array have the same value.  To build such an array,
 call:
 
 ```julia
-A = UniformArray(val, dims)
+A = UniformArray(val, args...)
 ```
 
-which yields an array `A` behaving as a read-only array of size `dims` whose
-values are all `val`. The array dimensions may be specified as multiple
-arguments.
+which yields an array `A` behaving as a read-only array whose values are all
+`val`. If all `args...` are integers, they are assumed to define the size of
+the array. Otherwise, all `args...` must be integer-valued unit ranges and are
+assumed to define the axes of the array. It is thus possible to have offset
+axes.
 
 Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
 all linear indices `i` in the range `1:length(A)`.
@@ -38,7 +40,7 @@ are considered as read-only. You may call `MutableUniformArray(val,dims)` to
 create a uniform array, say `B`, whose element value can be changed:
 
 ```julia
-B = MutableUniformArray(val, dims)
+B = MutableUniformArray(val, args...)
 ```
 
 A statement like `B[i] = val` is allowed to change the value of all the
@@ -49,15 +51,27 @@ unless `B` has a single element.
 Apart from all values being the same, uniform arrays should behaves like
 ordinary Julia arrays.
 
+When calling the constructors of uniform arrays, the element type `T` and the
+number of dimensions `N` may be specified. This is most useful for `T` to
+enforce a given element type. By default, `T = typeof(val)` is assumed. For
+example:
+
+```julia
+A = UniformArray{T}(val, args...)
+B = MutableUniformArray{T,N}(val, args...)
+```
+
 
 ## Fast uniform arrays
 
 A fast uniform array is like an immutable uniform array but with the elements
 value being part of the signature so that this value is known at compile time.
-To build such an array, call:
+To build such an array, call one of:
 
 ```julia
-A = FastUniformArray(val, dims)
+A = FastUniformArray(val, args...)
+A = FastUniformArray{T}(val, args...)
+A = FastUniformArray{T,N}(val, args...)
 ```
 
 
@@ -67,18 +81,18 @@ The values of the elements of a structured array are computed on the fly as a
 function of their indices. To build such an array, call:
 
 ```julia
-A = StructuredArray(func, dims)
+A = StructuredArray(func, args...)
 ```
 
-which yields an array `A` behaving as a read-only array of size `dims` whose
-entries are computed as a given function, here `func`, of its indices: `A[i]`
-yields `func(i)`. The array dimensions may be specified as multiple arguments.
+which yields an array `A` behaving as a read-only array of size or axes
+`args...` and whose entries are computed as a given function, here `func`, of
+its indices: `A[i]` yields `func(i)`.
 
 An optional leading argument `S` may be used to specify another index style
 than the default `IndexCartesian`:
 
 ```julia
-A = StructuredArray(S, func, dims)
+A = StructuredArray(S, func, args...)
 ```
 
 where `S` may be a sub-type of `IndexStyle` or an instance of such a sub-type.
@@ -101,11 +115,21 @@ Although the callable object `func` may not be a *pure function*, its return
 type shall be stable and structured arrays are considered as immutable in the
 sense that a statement like `A[i] = val` is not implemented. The type of the
 elements of structured array is guessed by applying `func` to the unit index.
-The element type, say `T`, may also be explicitely specified:
+The element type, say `T`, may also be explicitly specified:
 
 ```julia
-StructuredArray{T}([S = IndexCartesian,] func, dims)
+StructuredArray{T}(S, func, dims)
 ```
+
+where if omitted, `S = IndexCartesian` is assumed. The `StructuredArray`
+constructor also supports the number of dimensions `N` and the indexing style
+`S` as optional type parameters. The two following examples are equivalent:
+
+```julia
+A = StructuredArray{T,N}(S, func, args...)
+A = StructuredArray{T,N,S}(func, args...)
+```
+
 
 [doc-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [doc-stable-url]: https://emmt.github.io/StructuredArrays.jl/stable
