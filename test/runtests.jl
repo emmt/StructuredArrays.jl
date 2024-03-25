@@ -255,6 +255,39 @@ using Base: OneTo
         @test_throws ArgumentError K{Int}(17, 1, -1)
     end
 
+    val_list = (true, false, 0, 3, 3.0)
+    dims_list = (:, 1, (2,), [3,3], (2,1), [3,2],
+                 # NOTE: Specifying dimensions larger than number of dimensions
+                 #       is only supported in Julia ≥ 1.8
+                 VERSION ≥ v"1.8" ? [1,3,4] : [1,3],
+                 1:3)
+    @testset "Reductions of uniform arrays (val=$val, dims=$dims)" for val in val_list, dims in dims_list
+        f(x) = x > zero(x)
+        A = @inferred(UniformArray(val, (2, 3, 4)))
+        B = Array(A)
+        if dims isa Colon
+            @test typeof(B) === Array{eltype(A),ndims(A)}
+            @test all(f,  B) == @inferred(all(f, A))
+            @test any(f,  B) == @inferred(any(f, A))
+            @test extrema(B) == @inferred(extrema(A))
+            @test findmax(B) == @inferred(findmax(A))
+            @test findmin(B) == @inferred(findmin(A))
+            @test maximum(B) == @inferred(maximum(A))
+            @test minimum(B) == @inferred(minimum(A))
+            @test prod(   B) == @inferred(prod(A))
+            @test sum(    B) == @inferred(sum(A))
+        end
+        @test all(f,  B; dims=dims) == all(f,  A; dims=dims)
+        @test any(f,  B; dims=dims) == any(f,  A; dims=dims)
+        @test extrema(B; dims=dims) == extrema(A; dims=dims)
+        @test findmax(B; dims=dims) == findmax(A; dims=dims)
+        @test findmin(B; dims=dims) == findmin(A; dims=dims)
+        @test maximum(B; dims=dims) == maximum(A; dims=dims)
+        @test minimum(B; dims=dims) == minimum(A; dims=dims)
+        @test prod(   B; dims=dims) == prod(   A; dims=dims)
+        @test sum(    B; dims=dims) == sum(    A; dims=dims)
+    end
+
     @testset "Structured arrays (StructuredArray)" begin
         dims = (Int8(3), Int16(4))
         N = length(dims)

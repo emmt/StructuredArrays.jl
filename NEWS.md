@@ -1,5 +1,16 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.13
+
+- Optimize reductions operations `minimum`, `maximum`, `extrema`, `all`, `any`,
+  `sum`, `prod`, `count`, `findmin`, and `findmax` for uniform arrays with
+  syntax `op([f=identity], A; dims=:)` where `op` is the reduction operation,
+  `f` is an optional function, `A` is a uniform array, and keyword `dims` is
+  the list of dimensions over which to reduce (all by default). As a result,
+  these operations are much faster for uniform arrays with a number of
+  operations scaling as `O(1)` instead of `O(length(A))`.
+
+
 ## Version 0.2.12
 
 - Structured arrays may have offset axes.

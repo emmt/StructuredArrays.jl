@@ -19,8 +19,13 @@ designed for arrays whose elements are `struct`.
 
 ## Uniform arrays
 
-All elements of a uniform array have the same value.  To build such an array,
-call:
+All elements of a uniform array have the same value. A uniform array thus
+require to only store this value and the dimensions of the array.In addition,
+some reduction operations (e.g., `minimum`, `maximum`, `extrema`, `all`, `any`,
+`sum`, `prod`, `count`, `findmin`, or `findmax`) may be implemented so as to be
+very fast for uniform arrays.
+
+To build a uniform array, call:
 
 ```julia
 A = UniformArray(val, args...)

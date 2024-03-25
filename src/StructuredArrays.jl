@@ -277,11 +277,152 @@ guess_eltype(func, ::Type{IndexLinear}, ::Val{N}) where {N} =
 @generated guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
     :(Base.promote_op(func, $(ntuple(x -> Int, Val(N))...)))
 
-# Specialize some methods for (fast) uniform arrays of booleans.
-Base.all(A::AbstractUniformArray{Bool}) = value(A)
-Base.count(A::AbstractUniformArray{Bool}) = ifelse(value(A), length(A), 0)
-Base.count(A::FastUniformArray{Bool,N,true}) where {N} = length(A)
-Base.count(A::FastUniformArray{Bool,N,false}) where {N} = 0
+for func in (:all, :any,
+             :minimum, :maximum, :extrema,
+             :count, :sum, :prod,
+             :findmin, :findmax)
+    _func = Symbol("_",func)
+    @eval begin
+        Base.$(func)(A::AbstractUniformArray; dims = :) = $(_func)(identity, A, dims)
+        Base.$(func)(f::Function, A::AbstractUniformArray; dims = :) = $(_func)(f, A, dims)
+    end
+    if func ∈ (:all, :any)
+        @eval begin
+            function $(_func)(f, A::AbstractUniformArray, ::Colon)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    val = f(value(A))
+                    return val isa Bool ? val : _unexpected_non_boolean(val)
+                end
+            end
+            function $(_func)(f, A::AbstractUniformArray, dims)
+                inds = _reduced_inds(getfield(A, :inds), dims)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    val = f(value(A))
+                    val isa Bool || _unexpected_non_boolean(val)
+                    return UniformArray(val, inds)
+                end
+            end
+        end
+    elseif func ∈ (:minimum, :maximum)
+        @eval begin
+            $(_func)(f, A::AbstractUniformArray, ::Colon) =
+                isempty(A) ? _empty_result($(func)) : f(value(A))
+            function $(_func)(f, A::AbstractUniformArray, dims)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    inds = _reduced_inds(getfield(A, :inds), dims)
+                    val = f(value(A))
+                    return UniformArray(val, inds)
+                end
+            end
+        end
+    elseif func === :extrema
+        @eval begin
+            function $(_func)(f, A::AbstractUniformArray, ::Colon)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    val = f(value(A))
+                    return (val, val)
+                end
+            end
+            function $(_func)(f, A::AbstractUniformArray, dims)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    inds = _reduced_inds(getfield(A, :inds), dims)
+                    val = f(value(A))
+                    return UniformArray((val,val), inds)
+                end
+            end
+        end
+    elseif func ∈ (:count, :sum, :prod)
+        op = Symbol(_func,"_num_val")
+        @eval begin
+            function $(_func)(f, A::AbstractUniformArray, ::Colon)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    num = length(A)
+                    val = f(value(A))
+                    return $(op)(num, val)
+                end
+            end
+            function $(_func)(f, A::AbstractUniformArray, dims)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    inds = _reduced_inds(getfield(A, :inds), dims)
+                    num = div(length(A), prod(to_size(inds)))
+                    val = f(value(A))
+                    return UniformArray($(op)(num, val), inds)
+                end
+            end
+        end
+    elseif func ∈ (:findmin, :findmax)
+        @eval begin
+            function $(_func)(f, A::AbstractUniformArray, ::Colon)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    idx = CartesianIndex(map(first, axes(A)))
+                    val = f(value(A))
+                    return val, idx
+                end
+            end
+            function $(_func)(f, A::AbstractUniformArray, dims)
+                if isempty(A)
+                    return _empty_result($(func))
+                else
+                    inds = _reduced_inds(getfield(A, :inds), dims)
+                    val = f(value(A))
+                    return UniformArray(val, inds), CartesianIndices(inds)
+                end
+            end
+        end
+    end
+end
+
+# Yield reduced axes/size of ().
+_reduced_inds(I::DimsOrAxes, ::Colon) = ()
+_reduced_inds(I::DimsOrAxes, dim::Integer) = _reduced_inds(I, (dim,))
+function _reduced_inds(I::DimsOrAxes{N},
+                       dims::Union{AbstractVector{<:Integer},
+                                   Tuple{Vararg{Integer}}}) where {N}
+    flags = ones(Bool, N)
+    for d in dims
+        d < 1 && throw(ArgumentError("region dimension(s) must be ≥ 1, got $d"))
+        if d ≤ N
+            @inbounds flags[d] = false
+        end
+    end
+    rd = I isa Dims{N} ? 1 : Base.OneTo(1) # reduced dimension/axis
+    return ntuple(i -> flags[i] ? I[i] : rd, Val(N))
+end
+_reduced_inds(I::DimsOrAxes, dims) = throw(ArgumentError(
+    "region dimension(s) must be a colon, an integer, or a vector/tuple of integers"))
+
+# Yield a uniform array with given value and axes/size or a scalar.
+_uniform(val, ::Tuple{}) = val
+_uniform(val, inds::Tuple) = UniformArray(val, inds)
+
+_sum_num_val(num::Integer, val) = num*val
+_prod_num_val(num::Integer, val) = val^num
+_count_num_val(num::Integer, val::Bool) = val ? num : zero(num)
+_count_num_val(num::Integer, val) = _unexpected_non_boolean(val)
+@noinline _unexpected_non_boolean(::Union{T,Type{T}}) where {T} =
+    throw(ArgumentError("unexpected non-boolean ($T) result"))
+
+# Result for an empty array for some base reduction functions.
+_empty_result(::typeof(all)) = true
+_empty_result(::typeof(any)) = false
+@noinline _empty_result(f::Function) =
+    throw(ArgumentError("reducing by `$(typename(f))` over an empty region is not allowed"))
 
 # See comments near `getindex` in `abstractarray.jl` for explanations about how
 # `getindex` and `setindex!` methods are expected to be specialized depending
