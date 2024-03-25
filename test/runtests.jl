@@ -207,7 +207,11 @@ using Base: OneTo
                     @test X isa R{eltype(A),ndims(A)-1}
                     @test X == Y
                 end
-                if VERSION ≥ v"1.6"
+                let I = (:,[true, false, true],:), X = f(A, I...), Y = f(B, I...)
+                    @test X isa R{eltype(A),ndims(Y)}
+                    @test X == Y
+                end
+                if v"1.6" ≤ VERSION ≤ v"1.10"
                     let I = (:,[true false true],:), X = f(A, I...), Y = f(B, I...)
                         @test X isa R{eltype(A),ndims(Y)}
                         @test X == Y
