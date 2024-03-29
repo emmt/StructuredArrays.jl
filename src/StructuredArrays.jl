@@ -420,18 +420,17 @@ _reduced_inds(I::DimsOrAxes, dim::Integer) = _reduced_inds(I, (dim,))
 function _reduced_inds(I::DimsOrAxes{N},
                        dims::Union{AbstractVector{<:Integer},
                                    Tuple{Vararg{Integer}}}) where {N}
-    flags = ones(Bool, N)
-    for d in dims
-        d < 1 && throw(ArgumentError("region dimension(s) must be ≥ 1, got $d"))
-        if d ≤ N
-            @inbounds flags[d] = false
-        end
-    end
-    rd = I isa Dims{N} ? 1 : Base.OneTo(1) # reduced dimension/axis
-    return ntuple(i -> flags[i] ? I[i] : rd, Val(N))
+    dmin = minimum(dims)
+    dmin ≥ one(dmin) || throw(ArgumentError("region dimension(s) must be ≥ 1, got $dmin"))
+    #all(d -> d ≥ one(d), dims) || throw(ArgumentError(
+    #    "region dimension(s) must be ≥ 1, got $(minimum(dims))"))
+    return ntuple(d -> d ∈ dims ? _reduced_axis(I[d]) : I[d], Val(N))
 end
 _reduced_inds(I::DimsOrAxes, dims) = throw(ArgumentError(
     "region dimension(s) must be a colon, an integer, or a vector/tuple of integers"))
+
+_reduced_axis(::Int) = 1
+_reduced_axis(::AbstractUnitRange{Int}) = Base.OneTo(1)
 
 # Yield a uniform array with given value and axes/size or a scalar.
 _uniform(val, ::Tuple{}) = val
