@@ -6,6 +6,9 @@
 
 - Ordinal ranges may be used to define axes provided they have unit-step.
 
+- Axes of structured arrays may be specified as a mixture of integers (assumed
+  to be dimension lengths) and integer-valued unit-rages.
+
 ## Version 0.2.13
 
 - Optimize reductions operations `minimum`, `maximum`, `extrema`, `all`, `any`,

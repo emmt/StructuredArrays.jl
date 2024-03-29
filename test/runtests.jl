@@ -1,7 +1,7 @@
 module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays
-using StructuredArrays: checked_size, parameterless, to_dim, to_size, to_axis, to_axes
+using StructuredArrays: checked_indices, parameterless, to_dim, to_size, to_axis, to_axes
 using Base: OneTo
 
 @testset "StructuredArrays package" begin
@@ -14,11 +14,14 @@ using Base: OneTo
         @test parameterless(DenseArray{Float32,3}) === DenseArray
         @test parameterless(Matrix{Float64}) === Array
 
-        @test checked_size(()) == ()
-        @test checked_size((2,)) == (2,)
-        @test checked_size((4, 0, 1,)) == (4, 0, 1,)
-        @test_throws MethodError checked_size((0x4, Int16(11)))
-        @test_throws ArgumentError checked_size((4, -1, 1,))
+        @test checked_indices(()) == ()
+        @test checked_indices((2,)) == (2,)
+        @test checked_indices((4, 0, 1,)) == (4, 0, 1,)
+        @test checked_indices((4, Base.OneTo(8), 1,)) == (4, Base.OneTo(8), 1,)
+        @test checked_indices((Base.OneTo(7), 2:6, 5)) == (Base.OneTo(7), 2:6, 5)
+        @test_throws MethodError checked_indices((0x4, Int16(11)))
+        @test_throws MethodError checked_indices((4, 1:2:6, 1,))
+        @test_throws ArgumentError checked_indices((4, -1, 1,))
 
         dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
         inds = (Int8(2):Int8(3), OneTo{Int8}(3), Int16(-2):Int16(1), 1:5, OneTo{Int16}(6))
