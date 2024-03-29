@@ -4,6 +4,8 @@
 
 - Optimize methods `reverse` and `unique` for uniform arrays.
 
+- Ordinal ranges may be used to define axes provided they have unit-step.
+
 ## Version 0.2.13
 
 - Optimize reductions operations `minimum`, `maximum`, `extrema`, `all`, `any`,

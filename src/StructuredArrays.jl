@@ -550,23 +550,55 @@ end
 checked_size(inds::Axes) = inds
 checked_size(::Tuple{}) = ()
 
+"""
+    StructuredArrays.to_dim(x) -> dim::Int
+
+yields the length of array dimension specified by `x` which may be an integer
+or a unit range.
+
+"""
 to_dim(dim::Int) = dim
 to_dim(dim::Integer) = Int(dim)
-to_dim(rng::AbstractUnitRange{<:Integer}) = length(rng)::Int
+to_dim(rng::AbstractUnitRange{<:Integer}) = as(Int, length(rng))
+to_dim(rng::OrdinalRange{<:Integer}) = isone(step(rng)) ? length(rng) : non_unit_step(rng)
 
+"""
+    StructuredArrays.to_size(x) -> dims::Dims
+
+yields the array dimension(s) specified by `x`.
+
+"""
 to_size(::Tuple{}) = ()
 to_size(dims::Dims) = dims
 to_size(dims::Tuple{Vararg{Integer}}) = map(to_dim, dims)
 to_size(dim::Integer) = (to_dim(dim),)
-to_size(inds::Tuple{Vararg{AbstractUnitRange{<:Integer}}}) = map(length, inds)
+to_size(rng::OrdinalRange{<:Integer}) = (to_dim(rng),)
+to_size(inds::Tuple{Vararg{OrdinalRange{<:Integer}}}) = map(to_dim, inds)
 
+"""
+    StructuredArrays.to_axis(x) -> rng::AbstractUnitRange{Int}
+
+yields the array axis specified by `x`.
+
+"""
+to_axis(dim::Integer) = Base.OneTo{Int}(dim)
 to_axis(rng::AbstractUnitRange{Int}) = rng
 to_axis(rng::AbstractUnitRange{<:Integer}) = convert_eltype(Int, rng)
-to_axis(dim::Integer) = Base.OneTo{Int}(dim)
+to_axis(rng::OrdinalRange{<:Integer}) =
+    isone(step(rng)) ? UnitRange{Int}(first(rng), last(rng)) : non_unit_step(rng)
 
+"""
+    StructuredArrays.to_axes(x) -> rngs::Tuple{Vararg{AbstractUnitRange{Int}}}
+
+yields the array axes specified by `x`.
+
+"""
 to_axes(::Tuple{}) = ()
 to_axes(inds::Tuple{Vararg{AbstractUnitRange{Int}}}) = inds
-to_axes(inds::Tuple{Vararg{AbstractUnitRange{<:Integer}}}) = map(to_axis, inds)
+to_axes(inds::Tuple{Vararg{OrdinalRange{<:Integer}}}) = map(to_axis, inds)
 to_axes(dims::Tuple{Vararg{Integer}}) = map(to_axis, dims)
+
+@noinline non_unit_step(rng::AbstractRange) = throw(ArgumentError(
+    "invalid non-unit step ($(step(rng))) range"))
 
 end # module

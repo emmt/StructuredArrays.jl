@@ -30,6 +30,9 @@ using Base: OneTo
         @test @inferred(to_size(dims[2])) === (as(Int, dims[2]),)
         @test @inferred(to_size(Dims(dims))) === Dims(dims)
         @test @inferred(to_size(inds)) === Dims(dims)
+        @test @inferred(to_size(-2:1:3)) === (6,)
+        @test @inferred(to_size((-2:1:4, 2:5))) === (7, 4)
+        @test_throws ArgumentError to_size(1:2:6) # non-unit step
 
         @test @inferred(to_axis(3)) === OneTo(3)
         @test @inferred(to_axis(0x5)) === OneTo(5)
@@ -37,6 +40,8 @@ using Base: OneTo
         @test @inferred(to_axis(0x0:0x7)) === 0:7
         @test @inferred(to_axis(OneTo(0x8))) === OneTo(8)
         @test @inferred(to_axis(OneTo(5))) === OneTo(5)
+        @test @inferred(to_axis(-2:1:3)) === -2:3
+        @test_throws ArgumentError to_axis(1:2:6) # non-unit step
 
         @test @inferred(to_axes(())) === ()
         @test @inferred(to_axes((2, 4, 7,))) === (OneTo(2), OneTo(4), OneTo(7),)
