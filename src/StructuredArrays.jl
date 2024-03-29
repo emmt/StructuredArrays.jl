@@ -388,7 +388,6 @@ for func in (:all, :any,
     end
 end
 
-# Yield reduced axes/size of ().
 _reduced_inds(I::Inds, ::Colon) = ()
 _reduced_inds(I::Inds, dim::Integer) = _reduced_inds(I, (dim,))
 function _reduced_inds(I::Inds{N},

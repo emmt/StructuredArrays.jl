@@ -289,7 +289,9 @@ using Base: OneTo
                 @test minimum(B) == @inferred(minimum(A))
                 @test prod(   B) == @inferred(prod(   A))
                 @test sum(    B) == @inferred(sum(    A))
-                @test reverse(B) == @inferred(reverse(A))
+                if VERSION ≥ v"1.6"
+                    @test reverse(B) == @inferred(reverse(A))
+                end
                 @test unique( B) == @inferred(unique( A))
             end
             @test all(f,  B; dims=dims) == all(f,  A; dims=dims)
@@ -301,9 +303,10 @@ using Base: OneTo
             @test minimum(B; dims=dims) == minimum(A; dims=dims)
             @test prod(   B; dims=dims) == prod(   A; dims=dims)
             @test sum(    B; dims=dims) == sum(    A; dims=dims)
-
-            if dims isa Integer
+            if dims isa Integer || ((dims isa Tuple || dims isa Colon) && VERSION ≥ v"1.6")
                 @test reverse(B; dims=dims) == @inferred(reverse(A; dims=dims))
+            end
+            if dims isa Integer || dims isa Colon
                 @test unique( B; dims=dims) == @inferred(unique( A; dims=dims))
             end
         end
