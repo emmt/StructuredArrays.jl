@@ -277,6 +277,32 @@ guess_eltype(func, ::Type{IndexLinear}, ::Val{N}) where {N} =
 @generated guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
     :(Base.promote_op(func, $(ntuple(x -> Int, Val(N))...)))
 
+function Base.reverse(A::AbstractUniformArray; dims::Union{Colon,Integer,Tuple{Vararg{Integer}},
+                                                           AbstractVector{<:Integer}} = :)
+    if !(dims isa Colon)
+        for d in dims
+            d ≥ one(d) || throw(ArgumentError("dimension must be ≥ 1, got $d"))
+        end
+    end
+    return A
+end
+
+Base.unique(A::AbstractUniformArray; dims::Union{Colon,Integer} = :) = _unique(A, dims)
+
+_unique(A::AbstractUniformArray, ::Colon) = [value(A)]
+function _unique(A::AbstractUniformArray{T,N,I}, d::Integer) where {T,N,I}
+    if I <: Dims{N}
+        inp_size = size(A)
+        out_size = ntuple(i -> i == d ? 1 : @inbounds(inp_size[i]), Val(N))
+        return UniformArray{T}(value(A), out_size)
+    else
+        inp_axes = axes(A)
+        out_axes = ntuple(i -> i == d ? 1 : @inbounds(inp_axes[i]), Val(N))
+        return UniformArray{T}(value(A), out_axes)
+    end
+end
+
+# Optimize base reduction methods for uniform arrays.
 for func in (:all, :any,
              :minimum, :maximum, :extrema,
              :count, :sum, :prod,

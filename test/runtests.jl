@@ -260,36 +260,45 @@ using Base: OneTo
     end
 
     val_list = (true, false, 0, 3, 3.0)
-    dims_list = (:, 1, (2,), [3,3], (2,1), [3,2],
+    dims_list = (:, 1, 2, 3, (2,), [3,3], (2,1), [3,2],
                  # NOTE: Specifying dimensions larger than number of dimensions
                  #       is only supported in Julia ≥ 1.8
                  VERSION ≥ v"1.8" ? [1,3,4] : [1,3],
                  1:3)
-    @testset "Reductions of uniform arrays (val=$val, dims=$dims)" for val in val_list, dims in dims_list
-        f(x) = x > zero(x)
+    @testset "Optimized methods for uniform arrays (val=$val)" for val in val_list
         A = @inferred(UniformArray(val, (2, 3, 4)))
         B = Array(A)
-        if dims isa Colon
-            @test typeof(B) === Array{eltype(A),ndims(A)}
-            @test all(f,  B) == @inferred(all(f, A))
-            @test any(f,  B) == @inferred(any(f, A))
-            @test extrema(B) == @inferred(extrema(A))
-            @test findmax(B) == @inferred(findmax(A))
-            @test findmin(B) == @inferred(findmin(A))
-            @test maximum(B) == @inferred(maximum(A))
-            @test minimum(B) == @inferred(minimum(A))
-            @test prod(   B) == @inferred(prod(A))
-            @test sum(    B) == @inferred(sum(A))
+        @test typeof(B) === Array{eltype(A),ndims(A)}
+        @testset "... with `dims=$dims`" for dims in dims_list
+            f(x) = x > zero(x)
+            if dims isa Colon
+                @test all(f,  B) == @inferred(all(f,  A))
+                @test any(f,  B) == @inferred(any(f,  A))
+                @test extrema(B) == @inferred(extrema(A))
+                @test findmax(B) == @inferred(findmax(A))
+                @test findmin(B) == @inferred(findmin(A))
+                @test maximum(B) == @inferred(maximum(A))
+                @test minimum(B) == @inferred(minimum(A))
+                @test prod(   B) == @inferred(prod(   A))
+                @test sum(    B) == @inferred(sum(    A))
+                @test reverse(B) == @inferred(reverse(A))
+                @test unique( B) == @inferred(unique( A))
+            end
+            @test all(f,  B; dims=dims) == all(f,  A; dims=dims)
+            @test any(f,  B; dims=dims) == any(f,  A; dims=dims)
+            @test extrema(B; dims=dims) == extrema(A; dims=dims)
+            @test findmax(B; dims=dims) == findmax(A; dims=dims)
+            @test findmin(B; dims=dims) == findmin(A; dims=dims)
+            @test maximum(B; dims=dims) == maximum(A; dims=dims)
+            @test minimum(B; dims=dims) == minimum(A; dims=dims)
+            @test prod(   B; dims=dims) == prod(   A; dims=dims)
+            @test sum(    B; dims=dims) == sum(    A; dims=dims)
+
+            if dims isa Integer
+                @test reverse(B; dims=dims) == @inferred(reverse(A; dims=dims))
+                @test unique( B; dims=dims) == @inferred(unique( A; dims=dims))
+            end
         end
-        @test all(f,  B; dims=dims) == all(f,  A; dims=dims)
-        @test any(f,  B; dims=dims) == any(f,  A; dims=dims)
-        @test extrema(B; dims=dims) == extrema(A; dims=dims)
-        @test findmax(B; dims=dims) == findmax(A; dims=dims)
-        @test findmin(B; dims=dims) == findmin(A; dims=dims)
-        @test maximum(B; dims=dims) == maximum(A; dims=dims)
-        @test minimum(B; dims=dims) == minimum(A; dims=dims)
-        @test prod(   B; dims=dims) == prod(   A; dims=dims)
-        @test sum(    B; dims=dims) == sum(    A; dims=dims)
     end
 
     @testset "Structured arrays (StructuredArray)" begin

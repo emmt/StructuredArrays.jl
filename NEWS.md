@@ -1,5 +1,9 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.14
+
+- Optimize methods `reverse` and `unique` for uniform arrays.
+
 ## Version 0.2.13
 
 - Optimize reductions operations `minimum`, `maximum`, `extrema`, `all`, `any`,
@@ -10,16 +14,13 @@
   these operations are much faster for uniform arrays with a number of
   operations scaling as `O(1)` instead of `O(length(A))`.
 
-
 ## Version 0.2.12
 
 - Structured arrays may have offset axes.
 
-
 ## Version 0.2.11
 
 - Structured arrays no longer directly store their length.
-
 
 ## Version 0.2.10
 
