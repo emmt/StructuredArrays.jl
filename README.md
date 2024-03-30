@@ -20,10 +20,10 @@ designed for arrays whose elements are `struct`.
 ## Uniform arrays
 
 All elements of a uniform array have the same value. A uniform array thus
-require to only store this value and the dimensions of the array.In addition,
-some reduction operations (e.g., `minimum`, `maximum`, `extrema`, `all`, `any`,
-`sum`, `prod`, `count`, `findmin`, or `findmax`) may be implemented so as to be
-very fast for uniform arrays.
+require to only store this value and the dimensions of the array. In addition,
+some operations (e.g., `minimum`, `maximum`, `extrema`, `all`, `any`, `sum`,
+`prod`, `count`, `findmin`, `findmax`, `reverse`, or `unique`) may be
+implemented so as to be very fast for uniform arrays.
 
 To build a uniform array, call:
 
@@ -32,10 +32,9 @@ A = UniformArray(val, args...)
 ```
 
 which yields an array `A` behaving as a read-only array whose values are all
-`val`. If all `args...` are integers, they are assumed to define the size of
-the array. Otherwise, all `args...` must be integer-valued unit ranges and are
-assumed to define the axes of the array. It is thus possible to have offset
-axes.
+`val` and whose axes are defined by `args...`. Each of `args...` define an
+array axis and can be an integer for a 1-based index or an integer-valued unit
+step range. It is thus possible to have offset axes.
 
 Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
 all linear indices `i` in the range `1:length(A)`.
@@ -53,13 +52,12 @@ elements of `B` provided index `i` represents all possible indices in `B`.
 Typically `B[:] = val` or `B[1:end] = val` are accepted but not `B[1] = val`
 unless `B` has a single element.
 
-Apart from all values being the same, uniform arrays should behaves like
-ordinary Julia arrays.
+Apart from all values being the same, uniform arrays behave like ordinary Julia
+arrays.
 
-When calling the constructors of uniform arrays, the element type `T` and the
-number of dimensions `N` may be specified. This is most useful for `T` to
-enforce a given element type. By default, `T = typeof(val)` is assumed. For
-example:
+When calling a uniform array constructor, the element type `T` and the number
+of dimensions `N` may be specified. This is most useful for `T` to enforce a
+given element type. By default, `T = typeof(val)` is assumed. For example:
 
 ```julia
 A = UniformArray{T}(val, args...)
@@ -89,7 +87,7 @@ function of their indices. To build such an array, call:
 A = StructuredArray(func, args...)
 ```
 
-which yields an array `A` behaving as a read-only array of size or axes
+which yields an array `A` behaving as a read-only array of axes defined by
 `args...` and whose entries are computed as a given function, here `func`, of
 its indices: `A[i]` yields `func(i)`.
 
@@ -102,9 +100,9 @@ A = StructuredArray(S, func, args...)
 
 where `S` may be a sub-type of `IndexStyle` or an instance of such a sub-type.
 If `S` is `IndexCartesian` (the default), the function `func` will be called
-with `N` integer arguments, `N` being the number of dimensions. If `S` is
-`IndexLinear`, the function `func` will be called with a single integer
-argument.
+with `N` integer arguments, a `Vararg{Int,N}`, `N` being the number of
+dimensions. If `S` is `IndexLinear`, the function `func` will be called with a
+single integer argument, an `Int`.
 
 A structured array can be used to specify the location of structural non-zeros
 in a sparse matrix. For instance, the structure of a lower triangular matrix of
@@ -118,9 +116,9 @@ but with a constant small storage requirement whatever the size of the matrix.
 
 Although the callable object `func` may not be a *pure function*, its return
 type shall be stable and structured arrays are considered as immutable in the
-sense that a statement like `A[i] = val` is not implemented. The type of the
-elements of structured array is guessed by applying `func` to the unit index.
-The element type, say `T`, may also be explicitly specified:
+sense that a statement like `A[i] = val` is not implemented. The type, say, `T`
+of the elements of structured array is guessed by applying `func` to the unit
+index or may be explicitly specified:
 
 ```julia
 StructuredArray{T}(S, func, dims)
@@ -134,13 +132,6 @@ constructor also supports the number of dimensions `N` and the indexing style
 A = StructuredArray{T,N}(S, func, args...)
 A = StructuredArray{T,N,S}(func, args...)
 ```
-
-
-[doc-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[doc-stable-url]: https://emmt.github.io/StructuredArrays.jl/stable
-
-[doc-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[doc-dev-url]: https://emmt.github.io/StructuredArrays.jl/dev
 
 [license-url]: ./LICENSE.md
 [license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
