@@ -7,7 +7,7 @@
 - Ordinal ranges may be used to define axes provided they have unit-step.
 
 - Axes of structured arrays may be specified as a mixture of integers (assumed
-  to be dimension lengths) and integer-valued unit-rages.
+  to be dimension lengths) and integer-valued unit-ranges.
 
 ## Version 0.2.13
 
