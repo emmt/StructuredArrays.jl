@@ -1,5 +1,9 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.15
+
+- Update compatibility for `TypeUtils`.
+
 ## Version 0.2.14
 
 - Optimize methods `reverse` and `unique` for uniform arrays.
