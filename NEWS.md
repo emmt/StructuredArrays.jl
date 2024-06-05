@@ -1,5 +1,9 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.17
+
+- Axes specified as instances of `Base.OneTo` are stored by length.
+
 ## Version 0.2.16
 
 - Fix constructors for vector/matrix aliases.

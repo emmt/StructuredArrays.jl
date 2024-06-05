@@ -146,6 +146,11 @@ using Base: OneTo
             @test count(B) == 0
         end
 
+        # Check that axes specified as `Base.OneTo(dim)` is stored as `dim`.
+        let A = UniformArray(-7.4, 2, Base.OneTo(3), 1:4)
+            @test A isa UniformArray{eltype(A),ndims(A),Tuple{Int,Int,UnitRange{Int}}}
+        end
+
         # Aliases.
         V = K === UniformArray        ? UniformVector :
             K === FastUniformArray    ? FastUniformVector :

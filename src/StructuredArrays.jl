@@ -592,6 +592,7 @@ to_axes(args::Tuple{Vararg{Union{Integer,AbstractRange{<:Integer}}}}) = map(to_a
 
 to_dim_or_axis(arg::Integer) = to_dim(arg)
 to_dim_or_axis(arg::AbstractRange{<:Integer}) = to_axis(arg)
+to_dim_or_axis(arg::Base.OneTo{<:Integer}) = to_dim(arg)
 
 to_inds(args::Tuple{Vararg{Union{Integer,AbstractRange{<:Integer}}}}) =
     map(to_dim_or_axis, args)
