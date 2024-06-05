@@ -1,5 +1,9 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.16
+
+- Fix constructors for vector/matrix aliases.
+
 ## Version 0.2.15
 
 - Update compatibility for `TypeUtils`.

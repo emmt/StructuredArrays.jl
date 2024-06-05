@@ -146,10 +146,45 @@ using Base: OneTo
             @test count(B) == 0
         end
 
-        # Colon and range indexing of uniform arrays.
+        # Aliases.
         V = K === UniformArray        ? UniformVector :
             K === FastUniformArray    ? FastUniformVector :
             K === MutableUniformArray ? MutableUniformVector : Nothing
+        M = K === UniformArray        ? UniformMatrix :
+            K === FastUniformArray    ? FastUniformMatrix :
+            K === MutableUniformArray ? MutableUniformMatrix : Nothing
+        let A = #=@inferred=#(K{Float32}(3.0, 5)),
+            B = #=@inferred=#(V(first(A), length(A))),
+            C = #=@inferred=#(V{eltype(A)}(first(A), length(A)))
+            if isimmutable(A)
+                @test B === A
+                @test C === A
+            else
+                @test first( B) === first( A)
+                @test eltype(B) === eltype(A)
+                @test axes(  B) === axes(  A)
+                @test first( C) === first( A)
+                @test eltype(C) === eltype(A)
+                @test axes(  C) === axes(  A)
+            end
+        end
+        let A = #=@inferred=#(K{Float32}(-3.0, 5, 2)),
+            B = #=@inferred=#(M(first(A), size(A))),
+            C = #=@inferred=#(M{eltype(A)}(first(A), size(A)))
+            if isimmutable(A)
+                @test B === A
+                @test C === A
+            else
+                @test first( B) === first( A)
+                @test eltype(B) === eltype(A)
+                @test axes(  B) === axes(  A)
+                @test first( C) === first( A)
+                @test eltype(C) === eltype(A)
+                @test axes(  C) === axes(  A)
+            end
+        end
+
+        # Colon and range indexing of uniform arrays.
         x = K === UniformArray        ? π :
             K === FastUniformArray    ? 3.1 :
             K === MutableUniformArray ? Int8(5) : nothing

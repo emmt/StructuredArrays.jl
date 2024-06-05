@@ -148,8 +148,8 @@ struct StructuredArray{T,N,S,F,I<:Inds{N}} <: AbstractStructuredArray{T,N,S,I}
         new{T,N,S,F,I}(checked_indices(inds), func)
 end
 
-# Aliases.
 for (A, N) in ((:Vector, 1), (:Matrix, 2))
+    # Define aliases.
     @eval begin
         const $(Symbol("AbstractStructured",A)){T,S,I} = AbstractStructuredArray{T,$N,S,I}
         const $(Symbol("AbstractUniform",A)){T,I} = AbstractUniformArray{T,$N,I}
@@ -157,6 +157,27 @@ for (A, N) in ((:Vector, 1), (:Matrix, 2))
         const $(Symbol("Uniform",A)){T,I} = UniformArray{T,$N,I}
         const $(Symbol("FastUniform",A)){T,V,I} = FastUniformArray{T,$N,V,I}
         const $(Symbol("Structured",A)){T,S,F,I} = StructuredArray{T,$N,S,F,I}
+    end
+    # Constructors for structured vectors and matrices.
+    @eval begin
+        $(Symbol("Structured",A))(args...) = $(Symbol("Structured",A))(IndexCartesian, args...)
+        function $(Symbol("Structured",A))(::Union{S,Type{S}}, func, args...) where {S<:ConcreteIndexStyle}
+            T = guess_eltype(func, S, Val($N))
+            return StructuredArray{T,$N,S}(func, args...)
+        end
+        $(Symbol("Structured",A)){T}(args...) where {T} =
+            StructuredArray{T,$N,IndexCartesian}(args...)
+        $(Symbol("Structured",A)){T}(::Union{S,Type{S}}, args...) where {T,S<:ConcreteIndexStyle} =
+            StructuredArray{T,$N,S}(args...)
+        $(Symbol("Structured",A)){T,S}(args...) where {T,S<:ConcreteIndexStyle} =
+            StructuredArray{T,$N,S}(args...)
+    end
+    # Constructors for uniform vectors and matrices.
+    for K in (:Uniform, :MutableUniform, :FastUniform)
+        @eval begin
+            $(Symbol(K,A))(arg1::T, args...) where {T} = $(Symbol(K,"Array")){T,$N}(arg1, args...)
+            $(Symbol(K,A)){T}(args...) where {T} = $(Symbol(K,"Array")){T,$N}(args...)
+        end
     end
 end
 
