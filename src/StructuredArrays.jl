@@ -1,9 +1,8 @@
 """
 
-Package `StructuredArrays` implements arrays whose elements have values that
-only depend on the indices. Example of such arrays are uniform arrays with
-constant values, structured arrays with boolean values indicating whether an
-entry is significant.
+Package `StructuredArrays` implements arrays whose elements have values that only depend
+on the indices. Examples of such arrays are uniform arrays with constant values,
+structured arrays with Boolean values indicating whether an entry is significant.
 
 """
 module StructuredArrays
@@ -47,18 +46,17 @@ abstract type AbstractUniformArray{T,N,I<:Inds{N}} <: AbstractStructuredArray{T,
     UniformArray{T}(val, args...) -> A
     UniformArray{T,N}(val, args...) -> A
 
-build an immutable array `A` whose elements are all equal to `val`. The storage
-requirement is `O(1)` instead of `O(length(A))` for a usual array `A`.
-Subsequent arguments `args...` define the axes of the array. Optional
-parameters `T` and `N` are to specify the element type and the number of
-dimensions of the array.
+build an immutable array `A` whose elements are all equal to `val` and whose axes are
+specified by `args...`. The storage requirement is `O(1)` instead of `O(length(A))` for an
+ordinary array `A`. Optional parameters `T` and `N` are to specify the element type and
+the number of dimensions of the array.
 
-Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for
-all linear indices `i` in the range `1:length(A)`.
+Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for all linear
+indices `i` in the range `1:length(A)`.
 
-A statement like `A[i] = val` is not implemented as uniform arrays are
-considered as immutable. Call `MutableUniformArray(val,dims)` to create a
-uniform array whose element value can be changed.
+A statement like `A[i] = x` is not implemented as uniform arrays are considered as
+immutable. Call [`MutableUniformArray(val, dims)`](@ref) to create a mutable uniform
+array.
 
 """
 struct UniformArray{T,N,I<:Inds{N}} <: AbstractUniformArray{T,N,I}
@@ -73,10 +71,10 @@ end
     FastUniformArray{T}(val, args...) -> A
     FastUniformArray{T,N}(val, args...) -> A
 
-build an immutable uniform array `A` whose elements are all equal to `val`. The
-difference with an instance of [`UniformArray`](@ref) is that `val` is part of
-the type signature so that `val` can be known at compile time. A typical use is
-to create all true/false masks.
+build an immutable uniform array `A` whose elements are all equal to `val` and whose axes
+are specified by `args...`. The difference with an instance of [`UniformArray`](@ref) is
+that `val` is part of the type signature so that `val` can be known at compile time. A
+typical use is to create all true/false masks.
 
 """
 struct FastUniformArray{T,N,V,I<:Inds{N}} <: AbstractUniformArray{T,N,I}
@@ -90,13 +88,13 @@ end
     MutableUniformArray{T}(val, args...) -> A
     MutableUniformArray{T,N}(val, args...) -> A
 
-build a mutable array `A` whose elements are initially all equal to `val`. The
-difference with an instance of [`UniformArray`](@ref) is that the uniform value
-can be changed.
+build a mutable array `A` whose elements are initially all equal to `val` and whose axes
+are specified by `args...`. The difference with an instance of [`UniformArray`](@ref) is
+that the uniform value can be changed.
 
-A statement like `A[i] = val` is allowed but changes the value of all the
-elements of `A`. Call `UniformArray(val,dims)` to create an immutable uniform
-array whose element value cannot be changed.
+A statement like `A[i] = x` is allowed to change the value of all the elements of `A`;
+hence `i` must represent all indices of `A`. Call [`UniformArray(val, dims)`](@ref) to
+create an immutable uniform array whose element value cannot be changed.
 
 """
 mutable struct MutableUniformArray{T,N,I<:Inds{N}} <: AbstractUniformArray{T,N,I}
@@ -112,33 +110,28 @@ end
     StructuredArray{T,N}([S = IndexCartesian,] func, args...) -> A
     StructuredArray{T,N,S}(func, args...) -> A
 
-build an array `A` whose values are a given function, here `func`, of its
-indices: `A[i]` is computed as `func(i)`. The storage requirement is `O(1)`
-instead of `O(lenght(A))` for a usual array. Subsequent arguments `args...`
-define the axes of the array. Optional parameters `T`, `N`, and `S` are to
-specify the element type, the number of dimensions, and the type of the
-indexing style of the array. If specified as an argument not a type parameter,
-`S` may also be an instance of `IndexStyle`.
+build an array `A` whose values at index `i` are computed as `func(i)` and whose axes are
+specified by `args...`. The storage requirement is `O(1)` instead of `O(lenght(A))` for an
+ordinary array. Optional parameters `T`, `N`, and `S` are to specify the element type, the
+number of dimensions, and the type of the indexing style of the array. If specified as an
+argument, not as a type parameter, `S` may also be an instance of `IndexStyle`.
 
-If indexing style is `IndexCartesian` (the default), the function `func` will
-be called with `N` integer arguments, `N` being the number of dimensions. If
-`S` is `IndexLinear`, the function `func` will be called with a single integer
-argument.
+The function `func` is called with the index specified as in base method `getindex`: if
+indexing style is `IndexCartesian` (the default), the function `func` will be called with
+`N` integer arguments, `N` being the number of dimensions; if `S` is `IndexLinear`, the
+function `func` will be called with a single integer argument.
 
-For instance, the structure of a lower triangular matrix of size `m×n` would be
-given by:
+For example, the structure of a lower triangular matrix of size `m×n` could be given by:
 
     StructuredArray((i,j) -> (i ≥ j), m, n)
 
 but with a constant small storage requirement whatever the size of the matrix.
 
-Although the callable object `func` may not be a *pure function*, its return
-type shall be stable and structured arrays are considered as immutable in the
-sense that a statement like `A[i] = val` is not implemented. The type of the
-elements of structured array is guessed by applying `func` to the unit index.
-The element type, say `T`, may also be explicitely specified:
-
-    StructuredArray{T}([S = IndexCartesian,] func, dims)
+Although the callable object `func` may not be a *pure function*, its return type shall be
+stable and structured arrays are considered as immutable in the sense that a statement
+like `A[i] = val` is not implemented. If parameter `T` is not specified in the call to the
+constructor, the type of the elements of structured array is inferred by applying `func`
+to the unit index.
 
 """
 struct StructuredArray{T,N,S,F,I<:Inds{N}} <: AbstractStructuredArray{T,N,S,I}
