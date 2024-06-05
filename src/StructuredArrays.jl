@@ -129,7 +129,7 @@ but with a constant small storage requirement whatever the size of the matrix.
 
 Although the callable object `func` may not be a *pure function*, its return type shall be
 stable and structured arrays are considered as immutable in the sense that a statement
-like `A[i] = val` is not implemented. If parameter `T` is not specified in the call to the
+like `A[i] = x` is not implemented. If parameter `T` is not specified in the call to the
 constructor, the type of the elements of structured array is inferred by applying `func`
 to the unit index.
 
