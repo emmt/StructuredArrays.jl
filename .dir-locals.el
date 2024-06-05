@@ -2,7 +2,7 @@
 	 (tab-width . 8)
          ;;(basic-offset . 4)
          ;;(coding . utf8)
-	 (fill-column . 79)
+	 (fill-column . 90)
 	 (ispell-local-dictionary . "american")))
  (c-mode . ((c-file-style . "bsd")
 	    (c-basic-offset . 4)))
