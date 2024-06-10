@@ -41,6 +41,9 @@ abstract type AbstractStructuredArray{T,N,S<:ConcreteIndexStyle,I<:Inds{N}} <: A
 
 abstract type AbstractUniformArray{T,N,I<:Inds{N}} <: AbstractStructuredArray{T,N,IndexLinear,I} end
 
+# Singleton type used to avoid the overhead of `checked_indices` in constructors.
+struct BareBuild end
+
 """
     UniformArray(val, args...) -> A
     UniformArray{T}(val, args...) -> A
@@ -102,6 +105,8 @@ mutable struct MutableUniformArray{T,N,I<:Inds{N}} <: AbstractUniformArray{T,N,I
     val::T
     MutableUniformArray{T}(val, inds::I) where {T,N,I<:Inds{N}} =
         new{T,N,I}(checked_indices(inds), val)
+    MutableUniformArray{T}(::BareBuild, val, inds::I) where {T,N,I<:Inds{N}} =
+        new{T,N,I}(inds, val)
 end
 
 """
@@ -199,7 +204,7 @@ Base.copy(A::UniformArray) = A
 Base.copy(A::StructuredArray) = A
 Base.copy(A::FastUniformArray) = A
 Base.copy(A::MutableUniformArray{T}) where {T} =
-    MutableUniformArray{T}(value(A), indices(A))
+    MutableUniformArray{T}(BareBuild(), value(A), indices(A))
 
 Base.deepcopy(A::UniformArray) = A
 Base.deepcopy(A::StructuredArray) = A
