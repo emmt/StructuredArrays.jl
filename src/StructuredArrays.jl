@@ -177,15 +177,16 @@ end
 # Specialize base abstract array methods for structured arrays.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
+        indices(A::$cls) = getfield(A, :inds)
         Base.length(A::$cls) = prod(size(A))
-        Base.size(A::$cls) = to_size(getfield(A, :inds))
+        Base.size(A::$cls) = to_size(indices(A))
         Base.size(A::$cls, i::Integer) =
             i > ndims(A) ? 1 :
-            i > zero(i) ? to_dim(getfield(A, :inds)[i]) : throw(BoundsError(size(A), i))
-        Base.axes(A::$cls) = to_axes(getfield(A, :inds))
+            i > zero(i) ? to_dim(indices(A)[i]) : throw(BoundsError(size(A), i))
+        Base.axes(A::$cls) = to_axes(indices(A))
         Base.axes(A::$cls, i::Integer) =
             i > ndims(A) ? Base.OneTo(1) :
-            i > zero(i) ? to_axis(getfield(A, :inds)[i]) : throw(BoundsError(axes(A), i))
+            i > zero(i) ? to_axis(indices(A)[i]) : throw(BoundsError(axes(A), i))
      end
 end
 Base.has_offset_axes(A::AbstractUniformArray{T,0,Tuple{}}) where {T} = false
@@ -311,7 +312,7 @@ for func in (:all, :any,
                 end
             end
             function $(_func)(f, A::AbstractUniformArray, dims)
-                inds = _reduced_inds(getfield(A, :inds), dims)
+                inds = _reduced_inds(indices(A), dims)
                 if isempty(A)
                     return _empty_result($(func))
                 else
@@ -329,7 +330,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(getfield(A, :inds), dims)
+                    inds = _reduced_inds(indices(A), dims)
                     val = f(value(A))
                     return UniformArray(val, inds)
                 end
@@ -349,7 +350,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(getfield(A, :inds), dims)
+                    inds = _reduced_inds(indices(A), dims)
                     val = f(value(A))
                     return UniformArray((val,val), inds)
                 end
@@ -371,7 +372,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(getfield(A, :inds), dims)
+                    inds = _reduced_inds(indices(A), dims)
                     num = div(length(A), prod(to_size(inds)))
                     val = f(value(A))
                     return UniformArray($(op)(num, val), inds)
@@ -393,7 +394,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(getfield(A, :inds), dims)
+                    inds = _reduced_inds(indices(A), dims)
                     val = f(value(A))
                     return UniformArray(val, inds), CartesianIndices(inds)
                 end
