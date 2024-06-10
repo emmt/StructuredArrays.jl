@@ -2,6 +2,9 @@
 
 ## Version 0.2.17
 
+- For a uniform or structured array `A`, `copy(A)` and `deepcopy(A)` simply yield `A` if
+  it is immutable.
+
 - Axes specified as instances of `Base.OneTo` are stored by length.
 
 ## Version 0.2.16

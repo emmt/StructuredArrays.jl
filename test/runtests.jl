@@ -124,6 +124,15 @@ using Base: OneTo
             else
                 @test_throws Exception A[:] = x
             end
+            # `copy(A)` and `deepcopy(A)` simply yields `A` if it is immutable.
+            let C = @inferred copy(A)
+                @test C == A
+                @test (C === A) == !(A isa MutableUniformArray)
+            end
+            let C = @inferred deepcopy(A)
+                @test C == A
+                @test (C === A) == !(A isa MutableUniformArray)
+            end
         end
 
         # Check conversion of value.

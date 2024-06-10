@@ -194,6 +194,18 @@ Base.has_offset_axes(A::AbstractUniformArray{T,N,Dims{N}}) where {T,N} = false
 Base.has_offset_axes(A::StructuredArray{T,0,S,F,Tuple{}}) where {T,S,F} = false
 Base.has_offset_axes(A::StructuredArray{T,N,S,F,Dims{N}}) where {T,N,S,F} = false
 
+# `copy(A)` and `deepcopy(A)` simply yield `A` if it is immutable.
+Base.copy(A::UniformArray) = A
+Base.copy(A::StructuredArray) = A
+Base.copy(A::FastUniformArray) = A
+Base.copy(A::MutableUniformArray{T}) where {T} =
+    MutableUniformArray{T}(value(A), indices(A))
+
+Base.deepcopy(A::UniformArray) = A
+Base.deepcopy(A::StructuredArray) = A
+Base.deepcopy(A::FastUniformArray) = A
+Base.deepcopy(A::MutableUniformArray) = copy(A)
+
 # Constructors that convert trailing argument(s) to array dimensions or axes.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     # 0-dimesional case.
