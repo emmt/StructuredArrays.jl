@@ -2,9 +2,9 @@
 
 ## Version 0.2.18
 
-- Replace private methods `to_dim`, `to_axis`, `to_size`, and `to_axes` by `as_array_dim`,
-  `as_array_axis`, `as_array_size`, and `as_array_axes` provided by `TypeUtils` (version ≥
-  1.4).
+- Private methods `to_dim`, `to_axis`, `to_size`, and `to_axes` have been replaced by
+  `as_array_dim`, `as_array_axis`, `as_array_size`, and `as_array_axes` provided by
+  `TypeUtils` (version ≥ 1.4).
 
 ## Version 0.2.17
 
