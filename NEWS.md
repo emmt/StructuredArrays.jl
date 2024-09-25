@@ -1,5 +1,9 @@
 # User visible changes in `StructuredArrays` package
 
+- Replace private methods `to_dim`, `to_axis`, `to_size`, and `to_axes` by `as_array_dim`,
+  `as_array_axis`, `as_array_size`, and `as_array_axes` provided by `TypeUtils` (version ≥
+  1.4).
+
 ## Version 0.2.17
 
 - For a uniform or structured array `A`, `copy(A)` and `deepcopy(A)` simply yield `A` if

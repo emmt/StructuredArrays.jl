@@ -1,7 +1,7 @@
 module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays
-using StructuredArrays: checked_indices, parameterless, to_dim, to_size, to_axis, to_axes
+using StructuredArrays: checked_indices
 using Base: OneTo
 
 @testset "StructuredArrays package" begin
@@ -15,35 +15,6 @@ using Base: OneTo
         @test_throws MethodError checked_indices((0x4, Int16(11)))
         @test_throws MethodError checked_indices((4, 1:2:6, 1,))
         @test_throws ArgumentError checked_indices((4, -1, 1,))
-
-        dims = (Int8(2), Int16(3), Int32(4), Int64(5), 6)
-        inds = (Int8(2):Int8(3), OneTo{Int8}(3), Int16(-2):Int16(1), 1:5, OneTo{Int16}(6))
-
-        @test @inferred(to_size(())) === ()
-        @test @inferred(to_size(dims)) === map(Int, dims)
-        @test @inferred(to_size(dims)) === map(as(Int), dims)
-        @test @inferred(to_size(dims)) === Dims(dims)
-        @test @inferred(to_size(dims[2])) === (as(Int, dims[2]),)
-        @test @inferred(to_size(Dims(dims))) === Dims(dims)
-        @test @inferred(to_size(inds)) === Dims(dims)
-        @test @inferred(to_size(-2:1:3)) === (6,)
-        @test @inferred(to_size((-2:1:4, 2:5))) === (7, 4)
-        @test_throws ArgumentError to_size(1:2:6) # non-unit step
-
-        @test @inferred(to_axis(3)) === OneTo(3)
-        @test @inferred(to_axis(0x5)) === OneTo(5)
-        @test @inferred(to_axis(0:2)) === 0:2
-        @test @inferred(to_axis(0x0:0x7)) === 0:7
-        @test @inferred(to_axis(OneTo(0x8))) === OneTo(8)
-        @test @inferred(to_axis(OneTo(5))) === OneTo(5)
-        @test @inferred(to_axis(-2:1:3)) === -2:3
-        @test_throws ArgumentError to_axis(1:2:6) # non-unit step
-
-        @test @inferred(to_axes(())) === ()
-        @test @inferred(to_axes((2, 4, 7,))) === (OneTo(2), OneTo(4), OneTo(7),)
-        @test @inferred(to_axes((0x2, 4, Int16(7),))) === (OneTo(2), OneTo(4), OneTo(7),)
-        @test @inferred(to_axes((OneTo(2), 0:5, 0x1:0x9))) === (OneTo(2), 0:5, 1:9,)
-        @test @inferred(to_axes((OneTo(2), 0:5, 1:9,))) === (OneTo(2), 0:5, 1:9,)
     end
 
     @testset "Uniform arrays ($K)" for K in (UniformArray,
@@ -51,8 +22,8 @@ using Base: OneTo
                                              MutableUniformArray)
         dims = (Int8(2), Int16(3), Int32(4))
         inds = (Int8(0):Int8(1), OneTo{Int16}(3), Int16(-2):Int16(1),)
-        @test to_size(dims) === map(Int, dims)
-        @test to_size(inds) === to_size(dims)
+        @test as_array_size(dims) === map(Int, dims)
+        @test as_array_size(inds) === as_array_size(dims)
         N = length(dims)
         vals = (Float64(2.1), UInt32(7), UInt16(11),
                 Float32(-6.2), Float64(pi), Int16(-4))
@@ -367,10 +338,10 @@ using Base: OneTo
                   StructuredArray(S2(), f2, dims...),
                   StructuredArray{T2}(S2(), f2, dims),
                   StructuredArray{T2}(S2, f2, dims...),
-                  StructuredArray{T2,N}(S2, f2, to_size(dims)),
+                  StructuredArray{T2,N}(S2, f2, as_array_size(dims)),
                   StructuredArray{T2,N}(S2(), f2, dims...),
                   StructuredArray{T2,N,S2}(f2, dims),
-                  StructuredArray{T2,N,S2}(f2, to_size(dims)...),
+                  StructuredArray{T2,N,S2}(f2, as_array_size(dims)...),
                   StructuredArray{T2,N,S2}(S2, f2, dims),
                   StructuredArray{T2,N,S2}(S2(), f2, dims...),
                   StructuredArray(f2, dims),

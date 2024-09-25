@@ -183,14 +183,14 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
     @eval begin
         indices(A::$cls) = getfield(A, :inds)
         Base.length(A::$cls) = prod(size(A))
-        Base.size(A::$cls) = to_size(indices(A))
+        Base.size(A::$cls) = as_array_size(indices(A))
         Base.size(A::$cls, i::Integer) =
             i > ndims(A) ? 1 :
-            i > zero(i) ? to_dim(indices(A)[i]) : throw(BoundsError(size(A), i))
-        Base.axes(A::$cls) = to_axes(indices(A))
+            i > zero(i) ? as_array_dim(indices(A)[i]) : throw(BoundsError(size(A), i))
+        Base.axes(A::$cls) = as_array_axes(indices(A))
         Base.axes(A::$cls, i::Integer) =
             i > ndims(A) ? Base.OneTo(1) :
-            i > zero(i) ? to_axis(indices(A)[i]) : throw(BoundsError(axes(A), i))
+            i > zero(i) ? as_array_axis(indices(A)[i]) : throw(BoundsError(axes(A), i))
      end
 end
 Base.has_offset_axes(A::AbstractUniformArray{T,0,Tuple{}}) where {T} = false
@@ -389,7 +389,7 @@ for func in (:all, :any,
                     return _empty_result($(func))
                 else
                     inds = _reduced_inds(indices(A), dims)
-                    num = div(length(A), prod(to_size(inds)))
+                    num = div(length(A), prod(as_array_size(inds)))
                     val = f(value(A))
                     return UniformArray($(op)(num, val), inds)
                 end
@@ -538,8 +538,8 @@ end
 """
     StructuredArrays.checked_indices(inds) -> inds
 
-throws an `ArgumentError` exception if `inds` is not valid array dimensions or
-axes amd returns `inds` otherwise.
+throws an `ArgumentError` exception if `inds` is not valid array dimensions or axes amd
+returns `inds` otherwise.
 
 """
 checked_indices(inds::Tuple{Vararg{AbstractUnitRange{Int}}}) = inds # no needs to check
@@ -555,61 +555,11 @@ checked_indices(::Type{Bool}, a) = is_length_or_unit_range(a)
 is_length_or_unit_range(x::Any) = false
 is_length_or_unit_range(dim::Integer) = dim ≥ zero(dim)
 is_length_or_unit_range(rng::AbstractUnitRange{<:Integer}) = true
-is_length_or_unit_range(rng::OrdinalRange{<:Integer}) = isone(step(rng))
+is_length_or_unit_range(rng::AbstractRange{<:Integer}) = isone(step(rng))
 
-"""
-    StructuredArrays.to_dim(x) -> dim::Int
-
-yields the length of array dimension specified by `x` which may be an integer
-or a unit range.
-
-"""
-to_dim(dim::Int) = dim
-to_dim(dim::Integer) = Int(dim)
-to_dim(rng::AbstractUnitRange{<:Integer}) = as(Int, length(rng))
-to_dim(rng::OrdinalRange{<:Integer}) =
-    isone(step(rng)) ? as(Int, length(rng)) : non_unit_step(rng)
-
-"""
-    StructuredArrays.to_size(x) -> dims::Dims
-
-yields the array dimension(s) specified by `x`.
-
-"""
-to_size(::Tuple{}) = ()
-to_size(dims::Dims) = dims
-to_size(arg::Union{Integer,AbstractRange{<:Integer}}) = (to_dim(arg),)
-to_size(args::Tuple{Vararg{Union{Integer,AbstractRange{<:Integer}}}}) = map(to_dim, args)
-
-"""
-    StructuredArrays.to_axis(x) -> rng::AbstractUnitRange{Int}
-
-yields the array axis specified by `x`.
-
-"""
-to_axis(dim::Integer) = Base.OneTo{Int}(dim)
-to_axis(rng::AbstractUnitRange{Int}) = rng
-to_axis(rng::AbstractUnitRange{<:Integer}) = convert_eltype(Int, rng)
-to_axis(rng::OrdinalRange{<:Integer}) =
-    isone(step(rng)) ? UnitRange{Int}(first(rng), last(rng)) : non_unit_step(rng)
-
-"""
-    StructuredArrays.to_axes(x) -> rngs::Tuple{Vararg{AbstractUnitRange{Int}}}
-
-yields the array axes specified by `x`.
-
-"""
-to_axes(::Tuple{}) = ()
-to_axes(rngs::Tuple{Vararg{AbstractUnitRange{Int}}}) = rngs
-to_axes(arg::Union{Integer,AbstractRange{<:Integer}}) = (to_axis(arg),)
-to_axes(args::Tuple{Vararg{Union{Integer,AbstractRange{<:Integer}}}}) = map(to_axis, args)
-
-@noinline non_unit_step(rng::AbstractRange) = throw(ArgumentError(
-    "invalid non-unit step ($(step(rng))) range"))
-
-to_dim_or_axis(arg::Integer) = to_dim(arg)
-to_dim_or_axis(arg::AbstractRange{<:Integer}) = to_axis(arg)
-to_dim_or_axis(arg::Base.OneTo{<:Integer}) = to_dim(arg)
+to_dim_or_axis(arg::Integer) = as_array_dim(arg)
+to_dim_or_axis(arg::AbstractRange{<:Integer}) = as_array_axis(arg)
+to_dim_or_axis(arg::Base.OneTo{<:Integer}) = as_array_dim(arg)
 
 to_inds(args::Tuple{Vararg{Union{Integer,AbstractRange{<:Integer}}}}) =
     map(to_dim_or_axis, args)
