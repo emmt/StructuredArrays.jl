@@ -31,7 +31,6 @@ using TypeUtils
 
 import Base: @propagate_inbounds, front, tail
 
-const SubArrayRange = Union{Integer,OrdinalRange{<:Integer,<:Integer},Colon}
 const ConcreteIndexStyle = Union{IndexLinear,IndexCartesian}
 
 # Type alias for array size or axes.
