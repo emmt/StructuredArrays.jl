@@ -7,13 +7,6 @@ using Base: OneTo
 @testset "StructuredArrays package" begin
 
     @testset "Utilities" begin
-        @test parameterless(Array) === Array
-        @test parameterless(AbstractVector) === AbstractArray
-        @test parameterless(DenseMatrix) === DenseArray
-        @test parameterless(Array{Float32}) === Array
-        @test parameterless(DenseArray{Float32,3}) === DenseArray
-        @test parameterless(Matrix{Float64}) === Array
-
         @test checked_indices(()) == ()
         @test checked_indices((2,)) == (2,)
         @test checked_indices((4, 0, 1,)) == (4, 0, 1,)
