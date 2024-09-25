@@ -137,8 +137,8 @@ A = StructuredArray{T,N,S}(func, args...)
 [appveyor-img]: https://ci.appveyor.com/api/projects/status/github/emmt/StructuredArrays.jl?branch=master
 [appveyor-url]: https://ci.appveyor.com/project/emmt/StructuredArrays-jl/branch/master
 
-[codecov-img]: http://codecov.io/github/emmt/StructuredArrays.jl/coverage.svg?branch=master
-[codecov-url]: http://codecov.io/github/emmt/StructuredArrays.jl?branch=master
+[codecov-img]: https://codecov.io/github/emmt/StructuredArrays.jl/graph/badge.svg?token=QhmKO7PmN1
+[codecov-url]: https://codecov.io/github/emmt/StructuredArrays.jl
 
 [julia-url]: https://julialang.org/
 [julia-pkgs-url]: https://pkg.julialang.org/
