@@ -36,5 +36,6 @@ include("types.jl")
 include("common.jl")
 include("structured.jl")
 include("uniform.jl")
+include("meshes.jl")
 
 end # module

@@ -1,5 +1,11 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.19
+
+This version provides Cartesian meshes as callable (function-like) objects or as abstract
+arrays. These objects yields the Cartesian coordinates of the nodes of the mesh given
+their indices.
+
 ## Version 0.2.18
 
 - Private methods `to_dim`, `to_axis`, `to_size`, and `to_axes` have been replaced by

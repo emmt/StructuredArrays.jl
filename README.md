@@ -5,8 +5,8 @@
 [![Build Status][appveyor-img]][appveyor-url]
 [![Coverage][codecov-img]][codecov-url]
 
-`StructuredArrays` is a small [Julia][julia-url] package which provides multi-dimensional
-arrays behaving like regular arrays but whose elements have the same given value or are
+`StructuredArrays` is a [Julia][julia-url] package which provides multi-dimensional arrays
+behaving like regular arrays but whose elements have the same given value or are lazily
 computed by applying a given function to their indices. The main advantage of such arrays
 is that they are very light in terms of memory: their storage requirement is `O(1)`
 whatever their size instead of `O(n)` for an ordinary array of `n` elements.
@@ -14,6 +14,15 @@ whatever their size instead of `O(n)` for an ordinary array of `n` elements.
 Note that `StructuredArrays` has a different purpose than
 [`StructArrays`](https://github.com/JuliaArrays/StructArrays.jl) which is designed for
 arrays whose elements are `struct`.
+
+
+## Installation
+
+To install the latest stable release with Julia's package manager:
+
+``` julia
+] add StructuredArrays
+```
 
 
 ## Uniform arrays
@@ -127,6 +136,78 @@ parameters. The two following examples are equivalent:
 A = StructuredArray{T,N}(S, func, args...)
 A = StructuredArray{T,N,S}(func, args...)
 ```
+
+
+## Cartesian meshes
+
+As implemented in `StructuredArrays`, Cartesian `N`-dimensional meshes have equally spaced
+nodes with given *step* and *origin*. The mesh *step* is the spacing between contiguous
+nodes, it may be different (in length and units) along the different dimensions of the
+mesh. The mesh *origin* is the index of the node whose coordinates are all equal to zero,
+this index has no units and may be fractional.
+
+Assuming the `step` and `origin` of a mesh are both specified as `N`-tuples, the
+coordinates of the node at Cartesian index `(i1,i2,...)` are the `N`-tuple:
+
+```julia
+(step[1]*(i1 - origin[1]), step[2]*(i2 - origin[2]), ...)
+```
+
+If `step` and/or `origin` are scalars, they are assumed to be the same for all dimensions.
+The `origin` may also be `nothing` (the default), to assume that the origin of the mesh is
+at index `(0,0,...)`. In the implementation, the exact formula used to compute the
+coordinates of the nodes is optimized for the different possible cases. As a consequence,
+specifying `origin` as `0` or as a `N`-tuple of `0`s yields a mesh with the same
+coordinates but computed with more overheads than with `origin = nothing`.
+
+The values of `step` and `origin` stored by a mesh object `A` may be retrieved by calling
+`step(A)` or `origin(A)` Call `origin(Tuple,A)` to retrieve a `N`-dimensional (possibly
+fractional) index in all cases.
+
+
+### Cartesian mesh as a function
+
+To create a Cartesian mesh as a function, call:
+
+```julia
+using StructuredArrays.Meshes
+mesh = CartesianMesh{N}(step, origin = nothing)
+```
+
+to build a callable object such that `mesh(i1,i2,...)` generates the coordinates of the
+nodes according to the above formula. If any of `step` or `origin` is a `N`-tuple, the
+parameter `N` may be omitted. The node indices may also be specified as a `N`-tuple or as
+a `CartesianIndex`.
+
+The values of `step` and `origin` stored by a mesh may be converted to reduce the number
+of operations when computing coordinates. This optimization assumes that all
+indices are specified as `Int`s but fractional indices (i.e. reals) are also accepted.
+
+
+### Cartesian mesh as an array
+
+A typical usage is to wrap a Cartesian mesh function in a `StructuredArray` to build an
+abstract array whose values are the coordinates of the nodes of a finite size Cartesian
+mesh. For example:
+
+``` julia
+using StructuredArrays.Meshes
+ A = StructuredArray(CartesianMesh{N}(step, origin), inds...)
+```
+
+with `inds...` the *shape* (indices and/or dimensions) of the mesh. This can also be done
+by calling:
+
+
+``` julia
+using StructuredArrays
+A = CartesianMeshArray(inds...; step, origin=nothing)
+```
+
+Then the syntax `A[i1,i2,...]` yields the coordinates of the node at index `(i1,i2,...)`.
+Node indices may also be specified as a tuple of `Int`s or as a `CartesianIndex`. The
+coordinates are lazily computed and the storage is `O(1)`.
+
 
 [license-url]: ./LICENSE.md
 [license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
