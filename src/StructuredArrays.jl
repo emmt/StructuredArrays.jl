@@ -27,6 +27,7 @@ export
     UniformMatrix,
     UniformVector
 
+using OffsetArrays
 using TypeUtils
 
 import Base: @propagate_inbounds, front, tail

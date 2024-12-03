@@ -10,6 +10,11 @@ Other (minor) changes:
 
 - For uniform arrays `A`, `show(A)` prints an expression that is valid Julia code.
 
+- Add `OffsetArrays` dependency so that `similar(A,...)` works as expected for structured
+  arrays that may have offset axes. It yields an ordinary `Array` if it can be inferred
+  from the types of the arguments that the resulting array has no offset axes and an
+  `OffsetArray` otherwise.
+
 ## Version 0.2.18
 
 - Private methods `to_dim`, `to_axis`, `to_size`, and `to_axes` have been replaced by
