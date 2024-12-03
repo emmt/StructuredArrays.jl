@@ -31,6 +31,8 @@ using TypeUtils
 
 import Base: @propagate_inbounds, front, tail
 
+include("compat.jl")
+
 const ConcreteIndexStyle = Union{IndexLinear,IndexCartesian}
 
 # Type alias for array size or axes.
@@ -279,8 +281,8 @@ end
 guess_eltype(func, ::Type{IndexLinear}, ::Val{N}) where {N} =
     Base.promote_op(func, Int)
 
-@generated guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
-    :(Base.promote_op(func, $(ntuple(x -> Int, Val(N))...)))
+guess_eltype(func, ::Type{IndexCartesian}, ::Val{N}) where {N} =
+    Base.promote_op(func, ntuple(Returns(Int), Val(N))...)
 
 function Base.reverse(A::AbstractUniformArray; dims::Union{Colon,Integer,Tuple{Vararg{Integer}},
                                                            AbstractVector{<:Integer}} = :)
