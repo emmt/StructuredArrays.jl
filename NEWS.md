@@ -6,6 +6,10 @@ This version provides Cartesian meshes as callable (function-like) objects or as
 arrays. These objects yields the Cartesian coordinates of the nodes of the mesh given
 their indices.
 
+Other (minor) changes:
+
+- For uniform arrays `A`, `show(A)` prints an expression that is valid Julia code.
+
 ## Version 0.2.18
 
 - Private methods `to_dim`, `to_axis`, `to_size`, and `to_axes` have been replaced by
