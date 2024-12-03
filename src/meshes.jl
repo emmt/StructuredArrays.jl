@@ -34,29 +34,28 @@ cases.
 
 yields a callable object that generates the coordinates of the nodes of a `N`-dimensional
 Cartesian mesh with given `step` between consecutive nodes and `origin` of coordinates. If
-any of `step` or `origin` is a `N`-tuple, the parameter `N` may be omitted.
+any of `step` or `origin` is a `N`-tuple, the parameter `N` may be omitted. Calling the
+mesh object with `i = (i1,i2,...)`, the `N` indices of a node, yields:
 
-Assuming the `step` and `origin` of the mesh are both specified as `N`-tuples, calling the
-mesh object yields:
+    mesh(i) = step .* i             # if `origin` is `nothing`
+    mesh(i) = step .* (i .- origin) # else
 
-    mesh(i1, i2, ...) = (step[1]*(i1 - origin[1]), step[2]*(i2 - origin[2]), ...)
-
-with `i1`, `i2`, etc. the `N` indices of the node which can also be specified as a
-`N`-tuple or as a `CartesianIndex`. If `step` and/or `origin` are scalars, they are
-assumed to be the same for all dimensions. The exact formula used to compute the
-coordinates is optimized for the different possible cases and the stored values of `step`
-and `origin` are converted as needed to reduce the number of operations when computing
-coordinates. This latter optimization assumes that all indices are specified as `Int`s but
-fractional indices (i.e. reals) are also accepted.
-
-If `origin` is `nothing` (the default), the origin of the mesh is assumed to be at
-`(0,0,...)`. However, specifying `origin` as `0` or as a `N`-tuple of `0`s yields a mesh
-with the same coordinates but computed with more overheads than with `origin = nothing`.
+Thanks to broadcasting rules, each of `step` and `origin` may be specified as a scalar to
+assume that this parameters is the same for all dimensions, as a `N`-tuple otherwise.
+`origin` may also be `nothing` (the default), to assume that the origin of the mesh is at
+index `(0,0,...)`. In the implementation, the exact formula used to compute the
+coordinates of the nodes is optimized for the different possible cases. As a consequence,
+specifying `origin` as `0` or as a `N`-tuple of `0`s yields a mesh with the same
+coordinates but computed with more overheads than with `origin = nothing`.
 
 `step` may have units (possibly different for each dimension) but `origin` must be
-unitless (integer or real). The values of these parameters stored by the mesh may be
-retrieved by calling `step(mesh)` or [`origin(mesh)`](@ref
-StructuredArrays.Meshes.origin).
+unitless (integer or real). The values of the mesh parameters can be retrieved by calling
+`step(mesh)` or [`origin(mesh)`](@ref StructuredArrays.Meshes.origin). Call
+`step(Tuple,mesh)` or `origin(Tuple,mesh)` to retrieve a `N`-dimensional *step* and
+*origin* in all cases. The values of `step` and `origin` stored by the mesh may be
+converted at construction time to reduce the number of operations when computing
+coordinates. This optimization assumes that all indices are specified as `Int`s but
+fractional indices (i.e. reals) are also accepted.
 
 A typical usage is to wrap a Cartesian mesh in a `StructuredArray` to build an abstract
 array whose values are the coordinates of the nodes of a finite size Cartesian mesh. For

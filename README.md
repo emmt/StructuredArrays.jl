@@ -146,23 +146,25 @@ contiguous nodes, it may be different (in length and units) along the different 
 of the mesh. The mesh **origin** is the index of the node whose coordinates are all equal
 to zero, this index has no units and may be fractional.
 
-Assuming the `step` and `origin` of a mesh are both specified as `N`-tuples, the
-coordinates of the node at Cartesian index `(i1,i2,...)` are the `N`-tuple:
+The coordinates of the node at Cartesian index `i = (i1,i2,...)` are the `N`-tuple
+formally given by:
 
 ```julia
-(step[1]*(i1 - origin[1]), step[2]*(i2 - origin[2]), ...)
+step .* i             # if `origin` is `nothing`
+step .* (i .- origin) # else
 ```
 
-If `step` and/or `origin` are scalars, they are assumed to be the same for all dimensions.
-The `origin` may also be `nothing` (the default), to assume that the origin of the mesh is
-at index `(0,0,...)`. In the implementation, the exact formula used to compute the
+Thanks to broadcasting rules, each of `step` and `origin` may be specified as a scalar to
+assume that this parameters is the same for all dimensions, as a `N`-tuple otherwise.
+`origin` may also be `nothing` (the default), to assume that the origin of the mesh is at
+index `(0,0,...)`. In the implementation, the exact formula used to compute the
 coordinates of the nodes is optimized for the different possible cases. As a consequence,
 specifying `origin` as `0` or as a `N`-tuple of `0`s yields a mesh with the same
 coordinates but computed with more overheads than with `origin = nothing`.
 
 The values of `step` and `origin` stored by a mesh object `A` may be retrieved by calling
-`step(A)` or `origin(A)`. Call `step(Tuple,A)` and `origin(Tuple,A)` to retrieve a
-`N`-dimensional *step* and *origin* in all cases.
+`step(A)` or `origin(A)`. Call `step(Tuple,A)` or `origin(Tuple,A)` to retrieve a
+`N`-dimensional *step* or *origin* in all cases.
 
 
 ### Cartesian mesh as a function
