@@ -140,11 +140,11 @@ A = StructuredArray{T,N,S}(func, args...)
 
 ## Cartesian meshes
 
-As implemented in `StructuredArrays`, Cartesian `N`-dimensional meshes have equally spaced
-nodes with given *step* and *origin*. The mesh *step* is the spacing between contiguous
-nodes, it may be different (in length and units) along the different dimensions of the
-mesh. The mesh *origin* is the index of the node whose coordinates are all equal to zero,
-this index has no units and may be fractional.
+As implemented in `StructuredArrays`, `N`-dimensional Cartesian meshes have equally spaced
+nodes with given **step** and **origin**. The mesh **step** is the spacing between
+contiguous nodes, it may be different (in length and units) along the different dimensions
+of the mesh. The mesh **origin** is the index of the node whose coordinates are all equal
+to zero, this index has no units and may be fractional.
 
 Assuming the `step` and `origin` of a mesh are both specified as `N`-tuples, the
 coordinates of the node at Cartesian index `(i1,i2,...)` are the `N`-tuple:
@@ -161,8 +161,8 @@ specifying `origin` as `0` or as a `N`-tuple of `0`s yields a mesh with the same
 coordinates but computed with more overheads than with `origin = nothing`.
 
 The values of `step` and `origin` stored by a mesh object `A` may be retrieved by calling
-`step(A)` or `origin(A)` Call `origin(Tuple,A)` to retrieve a `N`-dimensional (possibly
-fractional) index in all cases.
+`step(A)` or `origin(A)`. Call `step(Tuple,A)` and `origin(Tuple,A)` to retrieve a
+`N`-dimensional *step* and *origin* in all cases.
 
 
 ### Cartesian mesh as a function

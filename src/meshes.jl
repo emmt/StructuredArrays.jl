@@ -213,6 +213,10 @@ end
 # Accessors.
 Base.step(A::CartesianMeshArray) = step(A.func)
 Base.step(A::CartesianMesh) = getfield(A, :step)
+Base.step(::Type{Tuple}, A::CartesianMeshArray) = step(Tuple, A.func)
+Base.step(::Type{Tuple}, A::CartesianMesh{N,<:Number}) where {N} = ntuple(Returns(step(A)), Val(N))
+Base.step(::Type{Tuple}, A::CartesianMesh{N,<:Tuple}) where {N} = step(A)
+
 origin(A::CartesianMeshArray) = origin(A.func)
 origin(A::CartesianMesh) = getfield(A, :origin)
 origin(::Type{Tuple}, A::CartesianMeshArray) = origin(Tuple, A.func)
