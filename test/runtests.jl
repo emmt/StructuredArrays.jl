@@ -2,6 +2,7 @@ module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays
 using StructuredArrays: checked_indices
+using StructuredArrays.Meshes
 using Base: OneTo
 
 @testset "StructuredArrays package" begin
@@ -396,6 +397,52 @@ using Base: OneTo
 
         # Call constructors with illegal dimension.
         @test_throws ArgumentError StructuredArray{Bool}((i,j) -> i ≥ j, 1, -1)
+    end
+
+    @testset "Cartesian meshes" begin
+        stp, org = 0.1f0, nothing
+        A = @inferred CartesianMesh(stp, org)
+        @test A isa CartesianMesh{1,typeof(stp),typeof(org)}
+
+        A = @inferred CartesianMesh{2}(stp, org)
+        @test A isa CartesianMesh{2,typeof(stp),typeof(org)}
+        @test ndims(A) === 2
+        @test eltype(A) === NTuple{2,Float32}
+        @test step(A) === stp
+        @test origin(A) === org
+        @test step(Tuple, A) === (stp, stp)
+        @test origin(Tuple, A) === (0, 0)
+        for i in ((-1, 3), (2, 7))
+            @test A(i...) === stp .* i
+            @test A(i) === A(i...)
+            @test A(CartesianIndex(i)) === A(i...)
+        end
+
+        stp, org = (0.1f0, 0.2f0), nothing
+        A = @inferred CartesianMesh(stp, org)
+        @test A isa CartesianMesh{2,typeof(stp),typeof(org)}
+        @test step(A) === stp
+        @test origin(A) === org
+        @test step(Tuple, A) === stp
+        @test origin(Tuple, A) === (0, 0)
+        for i in ((-1, 3), (2, 7))
+            @test A(i...) === stp .* i
+            @test A(i) === A(i...)
+            @test A(CartesianIndex(i)) === A(i...)
+        end
+
+        stp, org = (0.1f0, 0.2f0, 0.3f0), (-1, 0, 1)
+        A = @inferred CartesianMesh(stp, org)
+        @test A isa CartesianMesh{3,typeof(stp),typeof(org)}
+        @test step(A) === stp
+        @test origin(A) === org
+        @test step(Tuple, A) === stp
+        @test origin(Tuple, A) === org
+        for i in ((-1, 3, 5), (2, 7, -2))
+            @test A(i...) === stp .* (i .- org)
+            @test A(i) === A(i...)
+            @test A(CartesianIndex(i)) === A(i...)
+        end
     end
 end
 
