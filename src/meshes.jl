@@ -134,53 +134,14 @@ real_type_of_coords(::Type{R}, ::Type{S}) where {R<:Real,S<:Real} =
 @inline (f::CartesianMesh{N})(I::Vararg{Real,N}) where {N} = f(I)
 @inline (f::CartesianMesh{N})(I::NTuple{N,Real}) where {N} = mesh_node(step(f), I, origin(f))
 
-# Compute grid node coordinates.
-@inline mesh_node(stp::Number, I::NTuple{N,Real}, org::Nothing = nothing) where {N} =
-    map(Base.Fix1(*, stp), I)
-
-@generated function mesh_node(stp::NTuple{N,Number},
-                              I::NTuple{N,Real},
-                              org::Nothing) where {N}
-    return quote
-        $(Expr(:meta, :inline))
-        return $(Expr(:tuple, ntuple(d -> :(stp[$d]*I[$d]), Val(N))...))
-    end
+@inline function mesh_node(stp::Union{Number,NTuple{N,Number}}, I::NTuple{N,Real},
+                           org::Nothing = nothing) where {N}
+    return stp .* I
 end
 
-@generated function mesh_node(stp::Number,
-                              I::NTuple{N,Real},
-                              org::Real) where {N}
-    return quote
-        $(Expr(:meta, :inline))
-        return $(Expr(:tuple, ntuple(d -> :(stp*(I[$d] - org)), Val(N))...))
-    end
-end
-
-@generated function mesh_node(stp::NTuple{N,Number},
-                              I::NTuple{N,Real},
-                              org::Real) where {N}
-    return quote
-        $(Expr(:meta, :inline))
-        return $(Expr(:tuple, ntuple(d -> :(stp[$d]*(I[$d] - org)), Val(N))...))
-    end
-end
-
-@generated function mesh_node(stp::Number,
-                              I::NTuple{N,Real},
-                              org::NTuple{N,<:Real}) where {N}
-    return quote
-        $(Expr(:meta, :inline))
-        return $(Expr(:tuple, ntuple(d -> :(stp*(I[$d] - org[$d])), Val(N))...))
-    end
-end
-
-@generated function mesh_node(stp::NTuple{N,Number},
-                              I::NTuple{N,Real},
-                              org::NTuple{N,<:Real}) where {N}
-    return quote
-        $(Expr(:meta, :inline))
-        return $(Expr(:tuple, ntuple(d -> :(stp[$d]*(I[$d] - org[$d])), Val(N))...))
-    end
+@inline function mesh_node(stp::Union{Number,NTuple{N,Number}}, I::NTuple{N,Real},
+                           org::Union{Real,NTuple{N,Real}}) where {N}
+    return stp .* (I .- org)
 end
 
 const CartesianMeshArray{T,N} = StructuredArray{T,N,IndexCartesian,<:CartesianMesh}
