@@ -11,7 +11,7 @@ using TypeUtils
 
 import ..StructuredArrays: StructuredArray
 using ..StructuredArrays
-using ..StructuredArrays: Returns
+using ..StructuredArrays: Returns, print_axes
 
 """
     using StructuredArrays.Meshes
@@ -200,19 +200,6 @@ function Base.show(io::IO, ::MIME"text/plain", A::CartesianMeshArray)
     print_axes(io, A)
     print(io, "; step=", step(A), ", origin=", origin(A), ")")
     nothing
-end
-
-print_axis(io::IO, rng::Base.OneTo) = print(io, length(rng))
-print_axis(io::IO, rng::AbstractUnitRange{<:Integer}) = print(io, first(rng), ':', last(rng))
-
-print_axes(io::IO, A::AbstractArray) = print_axes(io, axes(A))
-function print_axes(io::IO, rngs::NTuple{N,AbstractUnitRange{<:Integer}}) where {N}
-    flag = false
-    for rng in rngs
-        flag && print(io, ", ")
-        print_axis(io, rng)
-        flag = true
-    end
 end
 
 end # module

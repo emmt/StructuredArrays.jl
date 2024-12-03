@@ -78,3 +78,16 @@ to_dim_or_axis(arg::Base.OneTo{<:Integer}) = as_array_dim(arg)
 
 to_inds(args::Tuple{Vararg{Union{Integer,AbstractRange{<:Integer}}}}) =
     map(to_dim_or_axis, args)
+
+print_axis(io::IO, rng::Base.OneTo) = print(io, length(rng))
+print_axis(io::IO, rng::AbstractUnitRange{<:Integer}) = print(io, first(rng), ':', last(rng))
+
+print_axes(io::IO, A::AbstractArray) = print_axes(io, axes(A))
+function print_axes(io::IO, rngs::NTuple{N,AbstractUnitRange{<:Integer}}) where {N}
+    flag = false
+    for rng in rngs
+        flag && print(io, ", ")
+        print_axis(io, rng)
+        flag = true
+    end
+end

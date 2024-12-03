@@ -295,3 +295,13 @@ end
 @inline concat(r::Tuple, f::Function, x::Tuple{}) = r    # finish recursion
 @inline concat(r::Tuple, f::Function, x::Tuple) =        # pursue recursion
     concat((r..., f(first(x))...), f, tail(x))
+
+Base.show(io::IO, A::AbstractUniformArray) = show(io, MIME"text/plain"(), A)
+function Base.show(io::IO, ::MIME"text/plain", A::AbstractUniformArray)
+    join(io, size(A), '×')
+    print(io, " ", parameterless(typeof(A)), "{", eltype(A), ",", ndims(A), "}(",
+          value(A), ", (")
+    print_axes(io, A)
+    print(io, "))")
+    nothing
+end
