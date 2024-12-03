@@ -116,16 +116,17 @@ end
     StructuredArray{T,N}([S = IndexCartesian,] func, args...) -> A
     StructuredArray{T,N,S}(func, args...) -> A
 
-build an array `A` whose values at index `i` are computed as `func(i)` and whose axes are
-specified by `args...`. The storage requirement is `O(1)` instead of `O(lenght(A))` for an
-ordinary array. Optional parameters `T`, `N`, and `S` are to specify the element type, the
-number of dimensions, and the type of the indexing style of the array. If specified as an
-argument, not as a type parameter, `S` may also be an instance of `IndexStyle`.
+build a `N`-dimensional array `A` whose values at index `i` are computed as `func(i)` and
+whose shape is specified by `args...`. The storage requirement is `O(1)` instead of
+`O(lenght(A))` for an ordinary array. Optional parameters `T`, `N`, and `S` are to specify
+the element type, the number of dimensions, and the type of the indexing style of the
+array. If specified as an argument, not as a type parameter, `S` may also be an instance
+of `IndexStyle`.
 
 The function `func` is called with the index specified as in base method `getindex`: if
 indexing style is `IndexCartesian` (the default), the function `func` will be called with
-`N` integer arguments, `N` being the number of dimensions; if `S` is `IndexLinear`, the
-function `func` will be called with a single integer argument.
+`N` integer arguments (a `Vararg{Int,N}`); if `S` is `IndexLinear`, the function `func`
+will be called with a single integer argument (an `Int`).
 
 For example, the structure of a lower triangular matrix of size `m×n` could be given by:
 
@@ -212,9 +213,10 @@ Base.deepcopy(A::StructuredArray) = A
 Base.deepcopy(A::FastUniformArray) = A
 Base.deepcopy(A::MutableUniformArray) = copy(A)
 
-# Constructors that convert trailing argument(s) to array dimensions or axes.
+# Constructors that convert trailing argument(s) to array dimensions or axes. `arg1` is
+# the value for a uniform array, the function for a structured array.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
-    # 0-dimesional case.
+    # 0-dimensional case.
     @eval begin
         $cls(     arg1)             = $cls(     arg1, ())
         $cls{T}(  arg1) where {T}   = $cls{T}(  arg1, ())
