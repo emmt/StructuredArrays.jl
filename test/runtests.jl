@@ -42,6 +42,7 @@ using Base: OneTo
                 k == 4 ? K{T}(x, inds...) :
                 k == 5 ? K{T,N}(x, inds) :
                 k == 6 ? K{T,N}(x, inds...) : break
+            @test startswith(repr(A), "$K{")
             @test eltype(A) === T
             @test eltype(B) === T
             @test ndims(A) == N

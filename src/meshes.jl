@@ -195,8 +195,7 @@ origin(::Type{Tuple}, A::CartesianMesh{N,S,<:Tuple}) where {N,S} = origin(A)
 
 Base.show(io::IO, A::CartesianMeshArray) = show(io, MIME"text/plain"(), A)
 function Base.show(io::IO, ::MIME"text/plain", A::CartesianMeshArray)
-    join(io, size(A), "×")
-    print(io, " CartesianMeshArray{", eltype(A), ",", ndims(A), "}(")
+    print(io, "CartesianMeshArray{", eltype(A), ",", ndims(A), "}(")
     print_axes(io, A)
     print(io, "; step=", step(A), ", origin=", origin(A), ")")
     nothing
