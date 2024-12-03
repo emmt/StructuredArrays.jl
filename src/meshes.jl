@@ -170,6 +170,15 @@ function CartesianMeshArray(inds::NTuple{N,Union{Integer,AbstractUnitRange{<:Int
     return StructuredArray(IndexCartesian, CartesianMesh{N}(step, origin), inds)
 end
 
+# Extend some base methods.
+Base.ndims(A::CartesianMesh) = ndims(typeof(A))
+Base.ndims(::Type{<:CartesianMesh{N}}) where {N} = N
+
+Base.eltype(A::CartesianMesh) = eltype(typeof(A))
+Base.eltype(::Type{<:CartesianMesh{N,S}}) where {N,S<:Tuple} = S
+Base.eltype(::Type{<:CartesianMesh{N,S}}) where {N,S<:Number} =
+    Tuple{ntuple(Returns(S), Val(N))...}
+
 # Accessors.
 Base.step(A::CartesianMeshArray) = step(A.func)
 Base.step(A::CartesianMesh) = getfield(A, :step)
