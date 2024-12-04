@@ -12,7 +12,7 @@ while [ $# -gt 0 ]; do
     if [ -z "$args" ]; then
         args="$1"
     else
-        args="$arg $1"
+        args="$args $1"
     fi
     shift
 done
@@ -26,7 +26,7 @@ for ver in $args; do
     test -r ".Manifest-$ver.toml" && cp -pf ".Manifest-$ver.toml" Manifest.toml
     julia +$ver --color=yes --check-bounds=yes --depwarn=yes --project -e "
         using Pkg;
-        Pkg.instantiate();
+        Pkg.resolve(); # or Pkg.instantiate();
         Pkg.test();"
     test -r Manifest.toml && mv -f Manifest.toml ".Manifest-$ver.toml"
 done
