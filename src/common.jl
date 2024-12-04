@@ -92,3 +92,39 @@ function print_axes(io::IO, rngs::NTuple{N,AbstractUnitRange{<:Integer}};
     end
     as_tuple && print(io, N == 1 ? ",)" : ")")
 end
+
+"""
+    unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, [from::Integer = 1], to::Integer)
+
+yields an expression corresponding to the unrolled code of `mapfoldl(f,op,x)` for the
+entries of `x` at indices `from:to`.
+
+"""
+unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, n::Integer) =
+    unrolled_mapfoldl(f, op, x, 1, n)
+unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, from::Integer, to::Integer) =
+    unrolled_mapfoldl(f, op, x, as(Int, from), as(Int, to))
+function unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, i::Int, j::Int)
+    b = :($f($x[$j]))
+    i < j || return b
+    a = unrolled_mapfoldl(f, op, x, i, j - 1)
+    return :($op($a, $b))
+end
+
+"""
+    unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, [from::Integer = 1], to::Integer)
+
+yields an expression corresponding to the unrolled code of `mapfoldr(f,op,x)` for the
+entries of `x` at indices `from:to`.
+
+"""
+unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, n::Integer) =
+    unrolled_mapfoldr(f, op, x, 1, n)
+unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, from::Integer, to::Integer) =
+    unrolled_mapfoldr(f, op, x, as(Int, from), as(Int, to))
+function unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, i::Int, j::Int)
+    a = :($f($x[$i]))
+    i < j || return a
+    b = unrolled_mapfoldr(f, op, x, i + 1, j)
+    return :($op($a, $b))
+end

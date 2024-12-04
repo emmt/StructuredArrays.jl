@@ -11,7 +11,7 @@ using TypeUtils
 
 import ..StructuredArrays: StructuredArray
 using ..StructuredArrays
-using ..StructuredArrays: Returns, print_axes
+using ..StructuredArrays: Returns, print_axes, unrolled_mapfoldl, unrolled_mapfoldr
 
 """
     using StructuredArrays.Meshes
@@ -117,40 +117,6 @@ end
 @generated real_type_for_mesh_node(x::NTuple{N,Number}) where {N} = quote
     $(Expr(:meta, :inline))
     return $(unrolled_mapfoldl(:real_type, :promote_type, :x, N))
-end
-
-"""
-    unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, n::Integer)
-
-yields an expression corresponding to unrolling the code of `mapfoldl(f,op,x)` where
-`x` is a `n`-tuple.
-
-"""
-unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, n::Integer) =
-    unrolled_mapfoldl(f, op, x, 1, Int(n))
-
-function unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, i::Int, j::Int)
-    b = :($f($x[$j]))
-    i < j || return b
-    a = unrolled_mapfoldl(f, op, x, i, j - 1)
-    return :($op($a, $b))
-end
-
-"""
-    unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, n::Integer)
-
-yields an expression corresponding to unrolling the code of `mapfoldr(f,op,x)` where
-`x` is a `n`-tuple.
-
-"""
-unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, n::Integer) =
-    unrolled_mapfoldr(f, op, x, 1, Int(n))
-
-function unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, i::Int, j::Int)
-    a = :($f($x[$i]))
-    i < j || return a
-    b = unrolled_mapfoldr(f, op, x, i + 1, j)
-    return :($op($a, $b))
 end
 
 # Evaluators.
