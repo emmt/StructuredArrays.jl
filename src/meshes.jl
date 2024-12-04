@@ -85,49 +85,73 @@ CartesianMesh(step::Union{Number,NTuple{N,Number}}, origin::NTuple{N,Real}) wher
 
 function CartesianMesh{N}(step::Union{Number,NTuple{N,Number}},
                           origin::Union{Nothing,Real,NTuple{N,Real}} = nothing) where {N}
-    R = real_type_of_coords(step, origin)
+    R = promote_type(Int, real_type_for_mesh_node(step), real_type_for_mesh_node(origin))
     stp = fix_step(R, step)
     org = fix_origin(R, origin)
     return CartesianMesh{N,typeof(stp),typeof(org)}(stp, org)
 end
 
 # Convert the mesh step to the real numeric type `R` that has been inferred by
-# `real_type_of_coords`.
-fix_step(::Type{R}, stp::Number) where {R<:Real} = convert_real_type(R, stp)
-fix_step(::Type{R}, stp::NTuple{N,Number}) where {R<:Real,N} =
-    map(Base.Fix1(fix_step, R), stp)
+# `real_type_for_mesh_node`. To make sure that loop unrolling is effective for all
+# Julia versions, we use a generated function when argument is a tuple.
+@inline fix_step(::Type{R}, x::Number) where {R<:Real} = convert_real_type(R, x)
+@generated fix_step(::Type{R}, x::NTuple{N,Number}) where {R<:Real,N} = quote
+    $(Expr(:meta, :inline))
+    return $(Expr(:tuple, ntuple(i -> :(fix_step(R, x[$i])), Val(N))...))
+end
 
 # Convert the mesh origin to limit the number of conversions when computing node
-# coordinates with numeric type `R` that has been inferred by `real_type_of_coords`.
-fix_origin(::Type{R}, org::Union{Nothing,Int}) where {R<:Real} = org
-fix_origin(::Type{R}, org::Integer) where {R<:Real} = as(Int, org)
-fix_origin(::Type{R}, org::Real) where {R<:Real} = as(R, org)
-fix_origin(::Type{R}, org::NTuple{N,Real}) where {R<:Real,N} =
-    map(Base.Fix1(fix_origin, R), org)
+# coordinates with numeric type `R` that has been inferred by `real_type_for_mesh_node`.
+# To make sure that loop unrolling is effective for all Julia versions, we use a generated
+# function when argument is a tuple.
+@inline fix_origin(::Type{R}, x::Union{Nothing,Int}) where {R<:Real} = x
+@inline fix_origin(::Type{R}, x::Integer) where {R<:Real} = as(Int, x)
+@inline fix_origin(::Type{R}, x::Real) where {R<:Real} = as(R, x)
+@generated fix_origin(::Type{R}, x::NTuple{N,Real}) where {R<:Real,N} = quote
+    $(Expr(:meta, :inline))
+    return $(Expr(:tuple, ntuple(i -> :(fix_origin(R, x[$i])), Val(N))...))
+end
 
-# Yield the real numeric type of coordinate(s).
-real_type_of_coords(stp::Number, org::Union{Real,Nothing}) =
-    # This version is called by all the others of when the step and origin are the same
-    # for all dimensions.
-    real_type_of_coords(real_type(stp), typeof(org))
-real_type_of_coords(stp::Number, org::NTuple{N,Real}) where {N} =
-    # This version is called when the step is the same for all dimensions but the origin
-    # is different for each dimension.
-    real_type(ntuple(d -> real_type_of_coords(stp, org[d]), Val(N))...)
-real_type_of_coords(stp::NTuple{N,Number}, org::Union{Real,Nothing}) where {N} =
-    # This version is called when the step is different for each dimension but the origin
-    # is the same for all dimensions.
-    real_type(ntuple(d -> real_type_of_coords(stp[d], org), Val(N))...)
-real_type_of_coords(stp::NTuple{N,Number}, org::NTuple{N,Real}) where {N} =
-    # This version is called when the step and the origin are different for each
-    # dimension.
-    real_type(ntuple(d -> real_type_of_coords(stp[d], org[d]), Val(N))...)
+@inline real_type_for_mesh_node(x::Nothing) = Int
+@inline real_type_for_mesh_node(x::Number) = real_type(x)
+@generated real_type_for_mesh_node(x::NTuple{N,Number}) where {N} = quote
+    $(Expr(:meta, :inline))
+    return $(unrolled_mapfoldl(:real_type, :promote_type, :x, N))
+end
 
+"""
+    unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, n::Integer)
 
-real_type_of_coords(::Type{R}, ::Type{S}) where {R<:Real,S<:Nothing} =
-    typeof(one(R)*one(Int))
-real_type_of_coords(::Type{R}, ::Type{S}) where {R<:Real,S<:Real} =
-    typeof(one(R)*(one(Int) - zero(S)))
+yields an expression corresponding to unrolling the code of `mapfoldl(f,op,x)` where
+`x` is a `n`-tuple.
+
+"""
+unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, n::Integer) =
+    unrolled_mapfoldl(f, op, x, 1, Int(n))
+
+function unrolled_mapfoldl(f::Symbol, op::Symbol, x::Symbol, i::Int, j::Int)
+    b = :($f($x[$j]))
+    i < j || return b
+    a = unrolled_mapfoldl(f, op, x, i, j - 1)
+    return :($op($a, $b))
+end
+
+"""
+    unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, n::Integer)
+
+yields an expression corresponding to unrolling the code of `mapfoldr(f,op,x)` where
+`x` is a `n`-tuple.
+
+"""
+unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, n::Integer) =
+    unrolled_mapfoldr(f, op, x, 1, Int(n))
+
+function unrolled_mapfoldr(f::Symbol, op::Symbol, x::Symbol, i::Int, j::Int)
+    a = :($f($x[$i]))
+    i < j || return a
+    b = unrolled_mapfoldr(f, op, x, i + 1, j)
+    return :($op($a, $b))
+end
 
 # Evaluators.
 @inline (f::CartesianMesh{N})(I::CartesianIndex{N}) where {N} = f(Tuple(I))
