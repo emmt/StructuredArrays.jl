@@ -1,6 +1,12 @@
 const ConcreteIndexStyle = Union{IndexLinear,IndexCartesian}
 
-# Type alias for array size or axes.
+# Union of types accepted for arguments that may define an array axis.
+const AxisLike = Union{Integer,AbstractUnitRange{<:Integer}}
+
+# Type alias for array size or axes. For a proper shape, `Base.OneTo` ranges should be
+# replaced by their length. This is the job of the `as_shape` method. The `check_shape`
+# method is called to check the validity of the components of an array shape. The
+# `as_checked_shape` method combines the two.
 const Inds{N} = NTuple{N,Union{Int,AbstractUnitRange{Int}}}
 
 abstract type AbstractStructuredArray{T,N,S<:ConcreteIndexStyle,I<:Inds{N}} <: AbstractArray{T,N} end
@@ -13,21 +19,19 @@ struct BareBuild end
 struct UniformArray{T,N,I<:Inds{N}} <: AbstractUniformArray{T,N,I}
     inds::I
     val::T
-    UniformArray{T}(val, inds::I) where {T,N,I<:Inds{N}} =
-        new{T,N,I}(checked_indices(inds), val)
+    UniformArray{T}(::BareBuild, val, inds::I) where {T,N,I<:Inds{N}} =
+        new{T,N,I}(inds, val)
 end
 
 struct FastUniformArray{T,N,V,I<:Inds{N}} <: AbstractUniformArray{T,N,I}
     inds::I
-    FastUniformArray{T}(val, inds::I) where {T,N,I<:Inds{N}} =
-        new{T,N,as(T,val),I}(checked_indices(inds))
+    FastUniformArray{T}(::BareBuild, val, inds::I) where {T,N,I<:Inds{N}} =
+        new{T,N,as(T,val),I}(inds)
 end
 
 mutable struct MutableUniformArray{T,N,I<:Inds{N}} <: AbstractUniformArray{T,N,I}
     inds::I
     val::T
-    MutableUniformArray{T}(val, inds::I) where {T,N,I<:Inds{N}} =
-        new{T,N,I}(checked_indices(inds), val)
     MutableUniformArray{T}(::BareBuild, val, inds::I) where {T,N,I<:Inds{N}} =
         new{T,N,I}(inds, val)
 end
@@ -35,8 +39,8 @@ end
 struct StructuredArray{T,N,S,F,I<:Inds{N}} <: AbstractStructuredArray{T,N,S,I}
     inds::I
     func::F
-    StructuredArray{T,N,S}(func::F, inds::I) where {T,N,S<:ConcreteIndexStyle,F,I<:Inds{N}} =
-        new{T,N,S,F,I}(checked_indices(inds), func)
+    StructuredArray{T,N,S}(::BareBuild, func::F, inds::I) where {T,N,S<:ConcreteIndexStyle,F,I<:Inds{N}} =
+        new{T,N,S,F,I}(inds, func)
 end
 
 # Define aliases.

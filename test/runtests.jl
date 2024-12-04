@@ -1,21 +1,28 @@
 module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays
-using StructuredArrays: checked_indices
+using StructuredArrays: check_shape, as_shape
 using StructuredArrays.Meshes
 using Base: OneTo
 
 @testset "StructuredArrays package" begin
 
     @testset "Utilities" begin
-        @test checked_indices(()) == ()
-        @test checked_indices((2,)) == (2,)
-        @test checked_indices((4, 0, 1,)) == (4, 0, 1,)
-        @test checked_indices((4, Base.OneTo(8), 1,)) == (4, Base.OneTo(8), 1,)
-        @test checked_indices((Base.OneTo(7), 2:6, 5)) == (Base.OneTo(7), 2:6, 5)
-        @test_throws MethodError checked_indices((0x4, Int16(11)))
-        @test_throws MethodError checked_indices((4, 1:2:6, 1,))
-        @test_throws ArgumentError checked_indices((4, -1, 1,))
+        @test as_shape(()) === ()
+        @test as_shape(2) === 2
+        @test as_shape(0x2) === 2
+        @test as_shape(1:3) === 1:3
+        @test as_shape(Base.OneTo(11)) === 11
+        @test as_shape(0x2:0x4) === 2:4
+        @test as_shape((3,)) === (3,)
+        @test as_shape(Tuple, 4) === (4,)
+        @test as_shape(Tuple, (5,)) === (5,)
+        @test as_shape(Tuple, 1:3) === (1:3,)
+        @test as_shape((0x4, Int16(0), 1,)) === (4, 0, 1,)
+        @test as_shape((4, Base.OneTo{Int16}(8), 1,)) === (4, 8, 1,)
+        @test as_shape((Base.OneTo(7), 2:6, 5)) === (7, 2:6, 5)
+        @test_throws ArgumentError check_shape(-1)
+        @test_throws ArgumentError check_shape(1:2:6)
     end
 
     @testset "Uniform arrays ($K)" for K in (UniformArray,

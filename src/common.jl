@@ -13,10 +13,8 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
             i > zero(i) ? as_array_axis(indices(A)[i]) : throw(BoundsError(axes(A), i))
      end
 end
-Base.has_offset_axes(A::AbstractUniformArray{T,0,Tuple{}}) where {T} = false
-Base.has_offset_axes(A::AbstractUniformArray{T,N,Dims{N}}) where {T,N} = false
-Base.has_offset_axes(A::StructuredArray{T,0,S,F,Tuple{}}) where {T,S,F} = false
-Base.has_offset_axes(A::StructuredArray{T,N,S,F,Dims{N}}) where {T,N,S,F} = false
+Base.has_offset_axes(A::AbstractStructuredArray{T,0,S,Tuple{}}) where {T,S} = false
+Base.has_offset_axes(A::AbstractStructuredArray{T,N,S,Dims{N}}) where {T,N,S} = false
 
 # `copy(A)` and `deepcopy(A)` simply yield `A` if it is immutable.
 Base.copy(A::UniformArray) = A
@@ -30,54 +28,54 @@ Base.deepcopy(A::StructuredArray) = A
 Base.deepcopy(A::FastUniformArray) = A
 Base.deepcopy(A::MutableUniformArray) = copy(A)
 
-# Constructors that convert trailing argument(s) to array dimensions or axes. `arg1` is
-# the value for a uniform array, the function for a structured array.
-for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
-    # 0-dimensional case.
-    @eval begin
-        $cls(     arg1)             = $cls(     arg1, ())
-        $cls{T}(  arg1) where {T}   = $cls{T}(  arg1, ())
-        $cls{T,N}(arg1) where {T,N} = $cls{T,N}(arg1, ())
-    end
-    # N-dimensional cases with N ≥ 1.
-    for type in (:(Vararg{Union{Integer,AbstractRange{<:Integer}},N}),
-                 :(NTuple{N,Union{Integer,AbstractRange{<:Integer}}}))
-        @eval begin
-            $cls(     arg1, args::$type) where {  N} = $cls(     arg1, to_inds(args))
-            $cls{T}(  arg1, args::$type) where {T,N} = $cls{T}(  arg1, to_inds(args))
-            $cls{T,N}(arg1, args::$type) where {T,N} = $cls{T,N}(arg1, to_inds(args))
-        end
-    end
-end
+"""
+    as_shape(x)
+
+converts `x` as a proper array shape that is an array dimension length, a unit-step array
+axis, or a tuple of these if `x` is a tuple. Instances of `Base.OneTo` are replaced by
+their length. All integers are converted to `Int`s if needed. The result is an instance
+(or a tuple) of `Union{Int,AbstractUnitRange{Int}`.
+
+Call `as_shape(Tuple, x)` to ensure that the shape is returned as a tuple.
+
+""" as_shape
+# NOTE `map(f,x)` with `x` a tuple yields good code for `@code_warntype` and `@benchmark`
+#      provided `f` is a simple function whose output can be inferred. Branching or
+#      throwing in `f` breaks this, so we cannot check for argument validity while
+#      converting array indices to a proper shape and the checking of the specified
+#      indices is done in a separate function `check_shape`.
+as_shape(dim::Integer) = as(Int, dim)
+as_shape(rng::Base.OneTo{<:Integer}) = as(Int, length(rng))
+as_shape(rng::AbstractUnitRange{<:Integer}) = as(AbstractUnitRange{Int}, rng)
+as_shape(inds::Tuple{}) = ()
+as_shape(inds::Tuple{AxisLike, Vararg{AxisLike}}) = map(as_shape, inds)
+as_shape(Tuple, inds::Tuple{Vararg{AxisLike}}) = as_shape(inds)
+as_shape(Tuple, x::AxisLike) = (as_shape(x),)
 
 """
-    StructuredArrays.checked_indices(inds) -> inds
+    check_shape(x)
 
-throws an `ArgumentError` exception if `inds` is not valid array dimensions or axes and
-returns `inds` otherwise.
+throws an exception if `x` has invalid array indices such that `as_shape(x)` would not
+yield a proper array shape.
 
 """
-checked_indices(inds::Tuple{Vararg{AbstractUnitRange{Int}}}) = inds # no needs to check
-checked_indices(::Tuple{}) = () # no needs to check
-@inline checked_indices(inds::Inds) =
-    checked_indices(Bool, inds...) ? inds : throw(ArgumentError("invalid array dimensions or axes"))
+check_shape(dim::Integer) = dim ≥ zero(dim) || throw_bad_dimension(dim)
+check_shape(rng::AbstractUnitRange{<:Integer}) = nothing
+check_shape(rng::AbstractRange{<:Integer}) = isone(step(rng)) || throw_nonunit_step(rng)
+@noinline check_shape(x::Any) = throw(ArgumentError(
+    "invalid argument of type `$(typeof(x))` for array shape"))
 
-#checked_indices(::Type{Bool}) = true
-checked_indices(::Type{Bool}, a) = is_length_or_unit_range(a)
-@inline checked_indices(::Type{Bool}, a, b...) =
-    is_length_or_unit_range(a) & checked_indices(Bool, b...)
+@noinline throw_bad_dimension(dim::Integer) = throw(ArgumentError(
+    "array dimension must be nonnegative"))
 
-is_length_or_unit_range(x::Any) = false
-is_length_or_unit_range(dim::Integer) = dim ≥ zero(dim)
-is_length_or_unit_range(rng::AbstractUnitRange{<:Integer}) = true
-is_length_or_unit_range(rng::AbstractRange{<:Integer}) = isone(step(rng))
+@noinline throw_nonunit_step(rng::AbstractRange) = throw(ArgumentError(
+    "range has non-unit step"))
 
-to_dim_or_axis(arg::Integer) = as_array_dim(arg)
-to_dim_or_axis(arg::AbstractRange{<:Integer}) = as_array_axis(arg)
-to_dim_or_axis(arg::Base.OneTo{<:Integer}) = as_array_dim(arg)
-
-to_inds(args::Tuple{Vararg{Union{Integer,AbstractRange{<:Integer}}}}) =
-    map(to_dim_or_axis, args)
+# NOTE A loop such as `for x in inds; check_shape(x); end` is terrible in terms of
+#      performances. `foreach` is much better, at least in recent versions of Julia (≥
+#      1.8).
+check_shape(inds::Tuple{}) = nothing
+check_shape(inds::Tuple{AxisLike, Vararg{AxisLike}}) = foreach(check_shape, inds)
 
 print_axis(io::IO, rng::Base.OneTo) = print(io, length(rng))
 print_axis(io::IO, rng::AbstractUnitRange{<:Integer}) = print(io, first(rng), ':', last(rng))

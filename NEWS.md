@@ -15,6 +15,11 @@ Other (minor) changes:
   from the types of the arguments that the resulting array has no offset axes and an
   `OffsetArray` otherwise.
 
+- Array shape parameters of type `Base.OneTo` are converted to their lengths.
+
+- Improved constructors for: speed and allocations (with `@benchmark`), type inference
+  (with `@code_warntype`), and code clarity.
+
 ## Version 0.2.18
 
 - Private methods `to_dim`, `to_axis`, `to_size`, and `to_axes` have been replaced by

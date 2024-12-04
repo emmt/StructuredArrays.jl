@@ -44,21 +44,29 @@ create an immutable uniform array whose element value cannot be changed.
 
 """ MutableUniformArray
 
-# Constructors for uniform vectors and matrices.
-for (A, N) in ((:Vector, 1), (:Matrix, 2))
-    for K in (:Uniform, :MutableUniform, :FastUniform)
-        @eval begin
-            $(Symbol(K,A))(arg1::T, args...) where {T} = $(Symbol(K,"Array")){T,$N}(arg1, args...)
-            $(Symbol(K,A)){T}(args...) where {T} = $(Symbol(K,"Array")){T,$N}(args...)
+# Constructors for uniform arrays. For each sub-type, all constructors call the last one
+# that checks and converts the shape arguments and then calls the inner constructor.
+for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
+    @eval begin
+        $cls(     val::T, inds::Vararg{AxisLike,N}) where {T,N} = $cls{T}(val, inds)
+        $cls{T}(  val,    inds::Vararg{AxisLike,N}) where {T,N} = $cls{T}(val, inds)
+        $cls{T,N}(val,    inds::Vararg{AxisLike,N}) where {T,N} = $cls{T}(val, inds)
+        $cls(     val::T, inds::NTuple{N,AxisLike}) where {T,N} = $cls{T}(val, inds)
+        $cls{T,N}(val,    inds::NTuple{N,AxisLike}) where {T,N} = $cls{T}(val, inds)
+        function $cls{T}(val, inds::NTuple{N,AxisLike}) where {T,N}
+            check_shape(inds)
+            return $cls{T}(BareBuild(), val, as_shape(inds))
         end
     end
 end
 
-# Constructors that manage to call the inner constructors.
-for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
+# Constructors for uniform vectors and matrices.
+for K in (:Uniform, :MutableUniform, :FastUniform), (A, N) in ((:Vector, 1), (:Matrix, 2))
     @eval begin
-        $cls(     val::T, args::Inds{N}) where {T,N} = $cls{T}(val, args)
-        $cls{T,N}(val,    args::Inds{N}) where {T,N} = $cls{T}(val, args)
+        $(Symbol(K,A))(val::T, inds::Vararg{AxisLike,$N}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
+        $(Symbol(K,A)){T}(val, inds::Vararg{AxisLike,$N}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
+        $(Symbol(K,A))(val::T, inds::NTuple{$N,AxisLike}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
+        $(Symbol(K,A)){T}(val, inds::NTuple{$N,AxisLike}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
     end
 end
 
