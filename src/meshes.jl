@@ -197,7 +197,7 @@ Base.show(io::IO, A::CartesianMeshArray) = show(io, MIME"text/plain"(), A)
 function Base.show(io::IO, ::MIME"text/plain", A::CartesianMeshArray)
     print(io, "CartesianMeshArray{", eltype(A), ",", ndims(A), "}(")
     print_axes(io, A)
-    print(io, "; step=", step(A), ", origin=", origin(A), ")")
+    print(io, "; step=", step(A), ", origin=", repr(origin(A)), ")")
     nothing
 end
 
