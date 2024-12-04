@@ -80,12 +80,15 @@ check_shape(inds::Tuple{AxisLike, Vararg{AxisLike}}) = foreach(check_shape, inds
 print_axis(io::IO, rng::Base.OneTo) = print(io, length(rng))
 print_axis(io::IO, rng::AbstractUnitRange{<:Integer}) = print(io, first(rng), ':', last(rng))
 
-print_axes(io::IO, A::AbstractArray) = print_axes(io, axes(A))
-function print_axes(io::IO, rngs::NTuple{N,AbstractUnitRange{<:Integer}}) where {N}
+print_axes(io::IO, A::AbstractArray; kwds...) = print_axes(io, axes(A); kwds...)
+function print_axes(io::IO, rngs::NTuple{N,AbstractUnitRange{<:Integer}};
+                    as_tuple::Bool=false) where {N}
+    as_tuple && print(io, "(")
     flag = false
     for rng in rngs
         flag && print(io, ", ")
         print_axis(io, rng)
         flag = true
     end
+    as_tuple && print(io, N == 1 ? ",)" : ")")
 end

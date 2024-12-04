@@ -307,8 +307,8 @@ end
 Base.show(io::IO, A::AbstractUniformArray) = show(io, MIME"text/plain"(), A)
 function Base.show(io::IO, ::MIME"text/plain", A::AbstractUniformArray)
     print(io, parameterless(typeof(A)), "{", eltype(A), ",", ndims(A), "}(",
-          value(A), ", (")
-    print_axes(io, A)
-    print(io, "))")
+          value(A), ", ")
+    print_axes(io, A; as_tuple=true)
+    print(io, ")")
     nothing
 end
