@@ -36,13 +36,13 @@ uniform arrays.
 To build a uniform array, call:
 
 ```julia
-A = UniformArray(val, args...)
+A = UniformArray(val, inds...)
 ```
 
 which yields an array `A` behaving as a read-only array whose values are all `val` and
-whose axes are defined by `args...`. Each of `args...` define an array axis and can be an
-integer for a 1-based index or an integer-valued unit step range. It is thus possible to
-have offset axes as in the
+whose *shape* is defined by `inds...`. Each of `inds...` defines an array axis and can be
+an integer for a 1-based index or an integer-valued unit step range. It is thus possible
+to have offset axes as in the
 [`OffsetArrays`](https://github.com/JuliaArrays/OffsetArrays.jl) package.
 
 Uniform arrays implement conventional linear indexing: `A[i]` yields `val` for all linear
@@ -53,7 +53,7 @@ as read-only. You may call `MutableUniformArray(val,dims)` to create a mutable u
 array. For example:
 
 ```julia
-B = MutableUniformArray(val, args...)
+B = MutableUniformArray(val, inds...)
 ```
 
 For `B`, the statement `B[i] = x` is allowed to change the value of all the elements of
@@ -67,8 +67,8 @@ dimensions `N` may be specified. This is most useful for `T` to enforce a given 
 type. By default, `T = typeof(val)` is assumed. For example:
 
 ```julia
-A = UniformArray{T}(val, args...)
-B = MutableUniformArray{T,N}(val, args...)
+A = UniformArray{T}(val, inds...)
+B = MutableUniformArray{T,N}(val, inds...)
 ```
 
 
@@ -79,9 +79,9 @@ being part of the signature so that this value is known at compile time. To buil
 array, call one of:
 
 ```julia
-A = FastUniformArray(val, args...)
-A = FastUniformArray{T}(val, args...)
-A = FastUniformArray{T,N}(val, args...)
+A = FastUniformArray(val, inds...)
+A = FastUniformArray{T}(val, inds...)
+A = FastUniformArray{T,N}(val, inds...)
 ```
 
 
@@ -91,17 +91,17 @@ The values of the elements of a structured array are computed on the fly as a fu
 their indices. To build such an array, call:
 
 ```julia
-A = StructuredArray(func, args...)
+A = StructuredArray(func, inds...)
 ```
 
-which yields a read-only array `A` whose values at index `i` are computed as `func(i)` and
-whose axes are defined by `args...`. In other words, `A[i]` yields `func(i)`.
+which yields a read-only array `A` whose value at index `i` is computed as `func(i)` and
+whose *shape* is defined by `inds...`. In other words, `A[i]` yields `func(i)`.
 
 An optional leading argument `S` may be used to specify another index style than the
 default `IndexCartesian`:
 
 ```julia
-A = StructuredArray(S, func, args...)
+A = StructuredArray(S, func, inds...)
 ```
 
 where `S` may be a sub-type of `IndexStyle` or an instance of such a sub-type. If `S` is
@@ -133,8 +133,8 @@ supports the number of dimensions `N` and the indexing style `S` as optional typ
 parameters. The two following examples are equivalent:
 
 ```julia
-A = StructuredArray{T,N}(S, func, args...)
-A = StructuredArray{T,N,S}(func, args...)
+A = StructuredArray{T,N}(S, func, inds...)
+A = StructuredArray{T,N,S}(func, inds...)
 ```
 
 
@@ -146,25 +146,25 @@ contiguous nodes, it may be different (in length and units) along the different 
 of the mesh. The mesh **origin** is the index of the node whose coordinates are all equal
 to zero, this index has no units and may be fractional.
 
-The coordinates of the node at Cartesian index `i = (i1,i2,...)` are the `N`-tuple
-formally given by:
+The coordinates of the node at Cartesian index `i = (i1,i2,...)` are formally given by:
 
 ```julia
 step .* i             # if `origin` is `nothing`
 step .* (i .- origin) # else
 ```
 
-Thanks to broadcasting rules, each of `step` and `origin` may be specified as a scalar to
-assume that this parameters is the same for all dimensions, as a `N`-tuple otherwise.
-`origin` may also be `nothing` (the default), to assume that the origin of the mesh is at
-index `(0,0,...)`. In the implementation, the exact formula used to compute the
-coordinates of the nodes is optimized for the different possible cases. As a consequence,
-specifying `origin` as `0` or as a `N`-tuple of `0`s yields a mesh with the same
-coordinates but computed with more overheads than with `origin = nothing`.
+which yiedls a `N`-tuple of coordinates. Thanks to broadcasting rules, each of `step` and
+`origin` may be specified as a scalar to assume that this parameters is the same for all
+dimensions, or as a `N`-tuple otherwise. `origin` may also be `nothing` (the default), to
+assume that the origin of the mesh is at index `(0,0,...)`. In the implementation, the
+exact formula used to compute the coordinates of the nodes is optimized for the different
+possible cases. As a consequence, specifying `origin` as `0` or as a `N`-tuple of `0`s
+yields a mesh with the same coordinates but computed with more overheads than with `origin
+= nothing`.
 
 The values of `step` and `origin` stored by a mesh object `A` may be retrieved by calling
-`step(A)` or `origin(A)`. Call `step(Tuple,A)` or `origin(Tuple,A)` to retrieve a
-`N`-dimensional *step* or *origin* in all cases.
+`step(A)` or `origin(A)`. To retrieve a `N`-dimensional *step* or *origin* in all cases,
+call `step(Tuple,A)` or `origin(Tuple,A)` instead.
 
 
 ### Cartesian mesh as a function
@@ -176,14 +176,15 @@ using StructuredArrays.Meshes
 mesh = CartesianMesh{N}(step, origin = nothing)
 ```
 
-to build a callable object such that `mesh(i1,i2,...)` generates the coordinates of the
-nodes according to the above formula. If any of `step` or `origin` is a `N`-tuple, the
-parameter `N` may be omitted. The node indices may also be specified as a `N`-tuple or as
-a `CartesianIndex`.
+which yields a callable object such that `mesh(i1,i2,...)` generates the coordinates of
+the node at `N`-dimensional index `(i1,i2,...)` according to the above formula. If any of
+`step` or `origin` is a `N`-tuple, the parameter `N` may be omitted. When calling the
+object, the node indices may also be specified as a `N`-tuple or as a `CartesianIndex`.
 
-The values of `step` and `origin` stored by a mesh may be converted to reduce the number
-of operations when computing coordinates. This optimization assumes that all
-indices are specified as `Int`s but fractional indices (i.e. reals) are also accepted.
+The values of `step` and `origin` stored by a mesh are automatically converted at
+construction time to reduce the number of operations when computing coordinates. This
+optimization assumes that all indices are specified as `Int`s but fractional indices (i.e.
+reals) are also accepted.
 
 
 ### Cartesian mesh as an array
