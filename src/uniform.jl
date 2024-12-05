@@ -84,7 +84,7 @@ Base.unique(A::AbstractUniformArray; dims::Union{Colon,Integer} = :) = _unique(A
 
 _unique(A::AbstractUniformArray, ::Colon) = [value(A)]
 _unique(A::AbstractUniformArray, dim::Integer) =
-    UniformArray(value(A), _reduced_inds1(shape(A), dim))
+    UniformArray(value(A), reduce_shape1(shape(A), dim))
 
 # Optimize base reduction methods for uniform arrays.
 for func in (:all, :any,
@@ -107,7 +107,7 @@ for func in (:all, :any,
                 end
             end
             function $(_func)(f, A::AbstractUniformArray, dims)
-                inds = _reduced_inds(shape(A), dims)
+                inds = reduce_shape(shape(A), dims)
                 if isempty(A)
                     return _empty_result($(func))
                 else
@@ -125,7 +125,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(shape(A), dims)
+                    inds = reduce_shape(shape(A), dims)
                     val = f(value(A))
                     return UniformArray(val, inds)
                 end
@@ -145,7 +145,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(shape(A), dims)
+                    inds = reduce_shape(shape(A), dims)
                     val = f(value(A))
                     return UniformArray((val,val), inds)
                 end
@@ -167,7 +167,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(shape(A), dims)
+                    inds = reduce_shape(shape(A), dims)
                     num = div(length(A), prod(as_array_size(inds)))
                     val = f(value(A))
                     return UniformArray($(op)(num, val), inds)
@@ -189,7 +189,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(shape(A), dims)
+                    inds = reduce_shape(shape(A), dims)
                     val = f(value(A))
                     rngs = map(as_array_axis, inds)
                     I = CartesianIndices(rngs)
@@ -204,42 +204,42 @@ for func in (:all, :any,
     end
 end
 
-# `_reduced_inds(inds,region)` reduces the dimensions in `region` for the array shape
-# `inds`. For type-stability in reduction operations, `_reduced_inds` shall return an
+# `reduce_shape(inds,region)` reduces the dimensions in `region` for the array shape
+# `inds`. For type-stability in reduction operations, `reduce_shape` shall return an
 # object of the same type as `inds` when `region` is an integer or a list of integers.
-# This is achieved by having `_reduced_axis` return an object of the same tayp as its
+# This is achieved by having `reduce_axis` return an object of the same tayp as its
 # argument.
-_reduced_inds(inds::Inds, ::Colon) = ()
-function _reduced_inds(inds::Inds{N}, dim::Integer, reduce=_reduced_axis) where {N}
-    _check_reduce_dim(minimum(dim))
+reduce_shape(inds::Inds, ::Colon) = ()
+function reduce_shape(inds::Inds{N}, dim::Integer, reduce=reduce_axis) where {N}
+    check_reduce_dim(minimum(dim))
     return ntuple(d -> d == dim ? reduce(inds[d]) : inds[d], Val(N))
 end
-_reduced_inds(inds::Inds, dims::Tuple{}) = inds
-function _reduced_inds(inds::Inds{N},
+reduce_shape(inds::Inds, dims::Tuple{}) = inds
+function reduce_shape(inds::Inds{N},
                        dims::Union{AbstractVector{<:Integer},
                                    Tuple{Integer,Vararg{Integer}}}) where {N}
-    _check_reduce_dim(minimum(dims))
-    return ntuple(d -> d ∈ dims ? _reduced_axis(inds[d]) : inds[d], Val(N))
+    check_reduce_dim(minimum(dims))
+    return ntuple(d -> d ∈ dims ? reduce_axis(inds[d]) : inds[d], Val(N))
 end
-_reduced_inds(inds::Inds, dims) = throw(ArgumentError(
+reduce_shape(inds::Inds, dims) = throw(ArgumentError(
     "region dimension(s) must be a colon, an integer, or a vector/tuple of integers"))
 
-_check_reduce_dim(dim::Integer) = dim ≥ one(dim) || _throw_bad_reduce_dim(dim)
-@noinline _throw_bad_reduce_dim(dim::Integer) =
+check_reduce_dim(dim::Integer) = dim ≥ one(dim) || throw_bad_reduce_dim(dim)
+@noinline throw_bad_reduce_dim(dim::Integer) =
     throw(ArgumentError("region dimension(s) must be ≥ 1, got $dim"))
 
-# `_reduced_axis` reduces a single dimension. Its input is either an array dimension or an
-# index range. For type-stability in reduction operations, `_reduced_axis` shall return an
+# `reduce_axis` reduces a single dimension. Its input is either an array dimension or an
+# index range. For type-stability in reduction operations, `reduce_axis` shall return an
 # object of the same type.
-_reduced_axis(dim::Integer) = one(dim)
-_reduced_axis(rng::Base.OneTo{T}) where {T} = Base.OneTo{T}(1)
-_reduced_axis(rng::AbstractUnitRange) = (i = first(rng); oftype(rng, i:i))
+reduce_axis(dim::Integer) = one(dim)
+reduce_axis(rng::Base.OneTo{T}) where {T} = Base.OneTo{T}(1)
+reduce_axis(rng::AbstractUnitRange) = (i = first(rng); oftype(rng, i:i))
 
-# `_reduced_inds1` and `_reduced_axis1` are for function like `unique` that do not
+# `reduce_shape1` and `reduce_axis1` are for reduction functions like `unique` that do not
 # preserve axis offsets.
-_reduced_inds1(inds::Inds, dim::Integer) = _reduced_inds(inds, dim, _reduced_axis1)
-_reduced_axis1(rng::AbstractUnitRange) = oftype(rng, 1:1)
-_reduced_axis1(x) = _reduced_axis(x)
+reduce_shape1(inds::Inds, dim::Integer) = reduce_shape(inds, dim, reduce_axis1)
+reduce_axis1(rng::AbstractUnitRange) = oftype(rng, 1:1)
+reduce_axis1(x) = reduce_axis(x)
 
 # Yield a uniform array with given value and axes/size or a scalar.
 _uniform(val, ::Tuple{}) = val
