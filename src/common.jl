@@ -1,16 +1,16 @@
 # Specialize base abstract array methods for structured and uniform arrays.
 for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        indices(A::$cls) = getfield(A, :inds)
+        shape(A::$cls) = getfield(A, :inds)
         Base.length(A::$cls) = prod(size(A))
-        Base.size(A::$cls) = as_array_size(indices(A))
+        Base.size(A::$cls) = as_array_size(shape(A))
         Base.size(A::$cls, i::Integer) =
             i > ndims(A) ? 1 :
-            i > zero(i) ? as_array_dim(indices(A)[i]) : throw(BoundsError(size(A), i))
-        Base.axes(A::$cls) = as_array_axes(indices(A))
+            i > zero(i) ? as_array_dim(shape(A)[i]) : throw(BoundsError(size(A), i))
+        Base.axes(A::$cls) = as_array_axes(shape(A))
         Base.axes(A::$cls, i::Integer) =
             i > ndims(A) ? Base.OneTo(1) :
-            i > zero(i) ? as_array_axis(indices(A)[i]) : throw(BoundsError(axes(A), i))
+            i > zero(i) ? as_array_axis(shape(A)[i]) : throw(BoundsError(axes(A), i))
      end
 end
 Base.has_offset_axes(A::AbstractStructuredArray{T,0,S,Tuple{}}) where {T,S} = false
@@ -21,7 +21,7 @@ Base.copy(A::UniformArray) = A
 Base.copy(A::StructuredArray) = A
 Base.copy(A::FastUniformArray) = A
 Base.copy(A::MutableUniformArray{T}) where {T} =
-    MutableUniformArray{T}(BareBuild(), value(A), indices(A))
+    MutableUniformArray{T}(BareBuild(), value(A), shape(A))
 
 Base.deepcopy(A::UniformArray) = A
 Base.deepcopy(A::StructuredArray) = A
@@ -29,7 +29,21 @@ Base.deepcopy(A::FastUniformArray) = A
 Base.deepcopy(A::MutableUniformArray) = copy(A)
 
 """
-    as_shape(x)
+    StructuredArrays.shape(A)
+
+yields the shape of array `A`, the result is similar to `axes(A)` except that `Base.OneTo`
+axes are replaced by their lengths. Hence, for an ordinary arrays, `shape(A) === size(A)`
+holds. `AbstractStructuredArray` objects directly store their shape.
+
+"""
+shape(A::Array) = size(A)
+shape(A::AbstractArray) = as_shape(axes(A))
+
+shape_type(A::AbstractStructuredArray) = shape_type(typeof(A))
+shape_type(::Type{<:AbstractStructuredArray{T,N,S,I}}) where {T,N,S,I} = I
+
+"""
+    StructuredArrays.as_shape(x)
 
 converts `x` as a proper array shape that is an array dimension length, a unit-step array
 axis, or a tuple of these if `x` is a tuple. Instances of `Base.OneTo` are replaced by
@@ -53,7 +67,7 @@ as_shape(Tuple, inds::Tuple{Vararg{AxisLike}}) = as_shape(inds)
 as_shape(Tuple, x::AxisLike) = (as_shape(x),)
 
 """
-    check_shape(x)
+    StructuredArrays.check_shape(x)
 
 throws an exception if `x` has invalid array indices such that `as_shape(x)` would not
 yield a proper array shape.

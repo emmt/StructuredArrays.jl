@@ -1,7 +1,7 @@
 module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays
-using StructuredArrays: check_shape, as_shape
+using StructuredArrays: value, shape, shape_type, check_shape, as_shape
 using StructuredArrays.Meshes
 using Base: OneTo
 
@@ -23,6 +23,10 @@ using Base: OneTo
         @test as_shape((Base.OneTo(7), 2:6, 5)) === (7, 2:6, 5)
         @test_throws ArgumentError check_shape(-1)
         @test_throws ArgumentError check_shape(1:2:6)
+        A = ones(3,4)
+        @test shape(A) === size(A)
+        B = OffsetArray(A, OneTo(3), -1:2)
+        @test shape(B) in ((1:3, -1:2), (3, -1:2))
     end
 
     @testset "Uniform arrays ($K)" for K in (UniformArray,

@@ -17,6 +17,9 @@ Other (minor) changes:
 
 - Array shape parameters of type `Base.OneTo` are converted to their lengths.
 
+- Non-exported method `StructuredArrays.shape` can be used to retrieve the *shape* of an
+  array.
+
 - Improved constructors for: speed and allocations (with `@benchmark`), type inference
   (with `@code_warntype`), and code clarity.
 

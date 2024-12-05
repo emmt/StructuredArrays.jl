@@ -116,7 +116,7 @@ for func in (:all, :any,
                 end
             end
             function $(_func)(f, A::AbstractUniformArray, dims)
-                inds = _reduced_inds(indices(A), dims)
+                inds = _reduced_inds(shape(A), dims)
                 if isempty(A)
                     return _empty_result($(func))
                 else
@@ -134,7 +134,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(indices(A), dims)
+                    inds = _reduced_inds(shape(A), dims)
                     val = f(value(A))
                     return UniformArray(val, inds)
                 end
@@ -154,7 +154,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(indices(A), dims)
+                    inds = _reduced_inds(shape(A), dims)
                     val = f(value(A))
                     return UniformArray((val,val), inds)
                 end
@@ -176,7 +176,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(indices(A), dims)
+                    inds = _reduced_inds(shape(A), dims)
                     num = div(length(A), prod(as_array_size(inds)))
                     val = f(value(A))
                     return UniformArray($(op)(num, val), inds)
@@ -198,7 +198,7 @@ for func in (:all, :any,
                 if isempty(A)
                     return _empty_result($(func))
                 else
-                    inds = _reduced_inds(indices(A), dims)
+                    inds = _reduced_inds(shape(A), dims)
                     val = f(value(A))
                     return UniformArray(val, inds), CartesianIndices(inds)
                 end
