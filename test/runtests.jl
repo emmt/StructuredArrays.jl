@@ -4,6 +4,9 @@ using Test, TypeUtils, StructuredArrays, OffsetArrays
 using StructuredArrays: value, shape, shape_type, check_shape, as_shape
 using Base: OneTo, has_offset_axes
 
+@generated my_mapfoldl(f, op, x::NTuple{N,Any}) where {N} = StructuredArrays.unrolled_mapfoldl(:f, :op, :x, N)
+@generated my_mapfoldr(f, op, x::NTuple{N,Any}) where {N} = StructuredArrays.unrolled_mapfoldr(:f, :op, :x, N)
+
 @testset "StructuredArrays package" begin
 
     @testset "Utilities" begin
@@ -26,6 +29,11 @@ using Base: OneTo, has_offset_axes
         @test shape(A) === size(A)
         B = OffsetArray(A, OneTo(3), -1:2)
         @test shape(B) in ((1:3, -1:2), (3, -1:2))
+
+        # Meta-programming for unrolling.
+        t = (1,3,8)
+        @test my_mapfoldl(float, =>, t) === mapfoldl(float, =>, t)
+        @test my_mapfoldr(float, =>, t) === mapfoldr(float, =>, t)
     end
 
     @testset "Uniform arrays ($K)" for K in (UniformArray,
