@@ -86,11 +86,11 @@ _unique(A::AbstractUniformArray, ::Colon) = [value(A)]
 function _unique(A::AbstractUniformArray{T,N,I}, d::Integer) where {T,N,I}
     if I <: Dims{N}
         inp_size = size(A)
-        out_size = ntuple(i -> i == d ? 1 : @inbounds(inp_size[i]), Val(N))
+        out_size = ntuple(i -> i == d ? 1 : inp_size[i], Val(N))
         return UniformArray{T}(value(A), out_size)
     else
         inp_axes = axes(A)
-        out_axes = ntuple(i -> i == d ? 1 : @inbounds(inp_axes[i]), Val(N))
+        out_axes = ntuple(i -> i == d ? 1 : inp_axes[i], Val(N))
         return UniformArray{T}(value(A), out_axes)
     end
 end
