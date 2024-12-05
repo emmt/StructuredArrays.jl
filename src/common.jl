@@ -27,6 +27,31 @@ Base.deepcopy(A::StructuredArray) = A
 Base.deepcopy(A::FastUniformArray) = A
 Base.deepcopy(A::MutableUniformArray) = copy(A)
 
+function Base.Array(A::AbstractStructuredArray{T,N,S,Dims{N}}) where {T,N,S}
+    B = Array{T,N}(undef, size(A))
+    if A isa AbstractUniformArray
+        fill!(B, value(A))
+    else
+        @inbounds for i in eachindex(A, B)
+            B[i] = A[i]
+        end
+    end
+    return B
+end
+
+function OffsetArrays.OffsetArray(A::AbstractStructuredArray{T,N}) where {T,N}
+    X = Array{T,N}(undef, size(A))
+    B = OffsetArray(X, axes(A))
+    if A isa AbstractUniformArray
+        fill!(X, value(A))
+    else
+        @inbounds for i in eachindex(A, B)
+            B[i] = A[i]
+        end
+    end
+    return B
+end
+
 """
     StructuredArrays.shape(A)
 

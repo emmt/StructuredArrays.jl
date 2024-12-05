@@ -2,9 +2,13 @@
 
 ## Version 0.2.19
 
-This version provides Cartesian meshes as callable (function-like) objects or as abstract
-arrays. These objects yields the Cartesian coordinates of the nodes of the mesh given
-their indices.
+Main changes:
+
+- New Cartesian meshes as callable (function-like) objects or as abstract arrays. These
+  objects yields the Cartesian coordinates of the nodes of the mesh given their indices.
+
+- `Array` and `OffsetArray` may be called to convert a uniform or a structured array
+  into a mutable array with the same axes.
 
 Other (minor) changes:
 
