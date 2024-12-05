@@ -13,7 +13,6 @@ for cls in (:StructuredArray, :FastUniformArray, :UniformArray, :MutableUniformA
             i > zero(i) ? as_array_axis(shape(A)[i]) : throw(BoundsError(axes(A), i))
      end
 end
-Base.has_offset_axes(A::AbstractStructuredArray{T,0,S,Tuple{}}) where {T,S} = false
 Base.has_offset_axes(A::AbstractStructuredArray{T,N,S,Dims{N}}) where {T,N,S} = false
 
 # `copy(A)` and `deepcopy(A)` simply yield `A` if it is immutable.
