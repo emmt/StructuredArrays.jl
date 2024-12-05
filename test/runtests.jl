@@ -3,7 +3,7 @@ module TestStructuredArrays
 using Test, TypeUtils, StructuredArrays
 using StructuredArrays: value, shape, shape_type, check_shape, as_shape
 using StructuredArrays.Meshes
-using Base: OneTo
+using Base: OneTo, has_offset_axes
 
 @testset "StructuredArrays package" begin
 
@@ -12,15 +12,15 @@ using Base: OneTo
         @test as_shape(2) === 2
         @test as_shape(0x2) === 2
         @test as_shape(1:3) === 1:3
-        @test as_shape(Base.OneTo(11)) === 11
+        @test as_shape(OneTo(11)) === 11
         @test as_shape(0x2:0x4) === 2:4
         @test as_shape((3,)) === (3,)
         @test as_shape(Tuple, 4) === (4,)
         @test as_shape(Tuple, (5,)) === (5,)
         @test as_shape(Tuple, 1:3) === (1:3,)
         @test as_shape((0x4, Int16(0), 1,)) === (4, 0, 1,)
-        @test as_shape((4, Base.OneTo{Int16}(8), 1,)) === (4, 8, 1,)
-        @test as_shape((Base.OneTo(7), 2:6, 5)) === (7, 2:6, 5)
+        @test as_shape((4, OneTo{Int16}(8), 1,)) === (4, 8, 1,)
+        @test as_shape((OneTo(7), 2:6, 5)) === (7, 2:6, 5)
         @test_throws ArgumentError check_shape(-1)
         @test_throws ArgumentError check_shape(1:2:6)
         A = ones(3,4)
@@ -65,14 +65,14 @@ using Base: OneTo
             @test ntuple(i -> size(B,i), ndims(B)+1) == (size(B)..., 1)
             @test_throws BoundsError size(A,0)
             @test_throws BoundsError size(B,0)
-            @test axes(A) === map(Base.OneTo{Int}, dims)
+            @test axes(A) === map(OneTo{Int}, dims)
             @test axes(B) === map(x -> convert_eltype(Int, x), inds)
-            @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
-            @test ntuple(i -> axes(B,i), ndims(B)+1) == (axes(B)..., Base.OneTo(1))
+            @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., OneTo(1))
+            @test ntuple(i -> axes(B,i), ndims(B)+1) == (axes(B)..., OneTo(1))
             @test_throws BoundsError axes(A,0)
             @test_throws BoundsError axes(B,0)
-            @test Base.has_offset_axes(A) == false
-            @test Base.has_offset_axes(B) == true
+            @test has_offset_axes(A) == false
+            @test has_offset_axes(B) == true
             @test IndexStyle(A) === IndexLinear()
             @test IndexStyle(B) === IndexLinear()
             @test IndexStyle(typeof(A)) === IndexLinear()
@@ -133,7 +133,7 @@ using Base: OneTo
         end
 
         # Check that axes specified as `Base.OneTo(dim)` is stored as `dim`.
-        let A = UniformArray(-7.4, 2, Base.OneTo(3), 1:4)
+        let A = UniformArray(-7.4, 2, OneTo(3), 1:4)
             @test A isa UniformArray{eltype(A),ndims(A),Tuple{Int,Int,UnitRange{Int}}}
         end
 
@@ -279,7 +279,7 @@ using Base: OneTo
         C = K{Int,0}(17)
         @test C[1] == 17
         @test Base.axes1(C) == 1:1
-        @test Base.has_offset_axes(C) == false
+        @test has_offset_axes(C) == false
 
         if K <: MutableUniformArray
             # Using index 1 to set a single-element mutable uniform array is allowed.
@@ -368,10 +368,10 @@ using Base: OneTo
             @test size(A) == dims
             @test ntuple(i -> size(A,i), ndims(A)+1) == (size(A)..., 1)
             @test_throws BoundsError size(A,0)
-            @test axes(A) === map(Base.OneTo, size(A))
-            @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
+            @test axes(A) === map(OneTo, size(A))
+            @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., OneTo(1))
             @test_throws BoundsError axes(A,0)
-            @test Base.has_offset_axes(A) == false
+            @test has_offset_axes(A) == false
             @test IndexStyle(A) === IndexCartesian()
             @test IndexStyle(typeof(A)) === IndexCartesian()
             @test A == [f2(i,j) for i in 1:dims[1], j in 1:dims[2]]
@@ -394,10 +394,10 @@ using Base: OneTo
             @test size(A) == dims
             @test ntuple(i -> size(A,i), ndims(A)+1) == (size(A)..., 1)
             @test_throws BoundsError size(A,0)
-            @test axes(A) === map(Base.OneTo, size(A))
-            @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., Base.OneTo(1))
+            @test axes(A) === map(OneTo, size(A))
+            @test ntuple(i -> axes(A,i), ndims(A)+1) == (axes(A)..., OneTo(1))
             @test_throws BoundsError axes(A,0)
-            @test Base.has_offset_axes(A) == false
+            @test has_offset_axes(A) == false
             @test IndexStyle(A) === IndexLinear()
             @test IndexStyle(typeof(A)) === IndexLinear()
             @test A == [f1(I[CartesianIndex(i,j)])
