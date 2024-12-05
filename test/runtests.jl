@@ -334,7 +334,7 @@ using Base: OneTo, has_offset_axes
             @test prod(   B; dims=dims) == prod(   A; dims=dims)
             @test sum(    B; dims=dims) == sum(    A; dims=dims)
             if dims isa Integer || ((dims isa Tuple || dims isa Colon) && VERSION ≥ v"1.6")
-                @test reverse(B; dims=dims) == @inferred(reverse(A; dims=dims))
+                @test reverse(B; dims=dims) == @inferred reverse(A; dims=dims)
             end
             if dims isa Integer || dims isa Colon
                 @test unique(B; dims=dims) == @inferred unique(A; dims=dims)
