@@ -4,12 +4,19 @@ using Test, TypeUtils, StructuredArrays, OffsetArrays
 using StructuredArrays: value, shape, shape_type, check_shape, as_shape
 using Base: OneTo, has_offset_axes
 
+const counter = Ref(0)
+get_counter(args...; kwds...) = counter[]
+set_counter(val::Integer) = counter[] = val
+reset_counter(args...; kwds...) = set_counter(0)
+incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
+
 @generated my_mapfoldl(f, op, x::NTuple{N,Any}) where {N} = StructuredArrays.unrolled_mapfoldl(:f, :op, :x, N)
 @generated my_mapfoldr(f, op, x::NTuple{N,Any}) where {N} = StructuredArrays.unrolled_mapfoldr(:f, :op, :x, N)
 
 @testset "StructuredArrays package" begin
 
     @testset "Utilities" begin
+        # Shape methods.
         @test as_shape(()) === ()
         @test as_shape(2) === 2
         @test as_shape(0x2) === 2
@@ -34,6 +41,33 @@ using Base: OneTo, has_offset_axes
         t = (1,3,8)
         @test my_mapfoldl(float, =>, t) === mapfoldl(float, =>, t)
         @test my_mapfoldr(float, =>, t) === mapfoldr(float, =>, t)
+
+        # `foreach` replacement.
+        # ... on tuples:
+        for n = 0:33
+            reset_counter()
+            @test StructuredArrays.foreach(incr_counter, ntuple(identity, Val(n))) === nothing
+            @test get_counter() == n
+        end
+        # ... on other iterables:
+        A = 1:17
+        reset_counter()
+        @test StructuredArrays.foreach(incr_counter, A) === nothing
+        @test get_counter() == length(A)
+
+        # `Returns` replacement.
+        v1, v2 = π, Float32(π)
+        f1 = @inferred StructuredArrays.Returns(v1)
+        f2 = @inferred StructuredArrays.Returns(v2)
+        @test f1 === @inferred StructuredArrays.Returns{typeof(v1)}(v1)
+        @test f2 === @inferred StructuredArrays.Returns{typeof(v2)}(v2)
+        @test f2 === @inferred StructuredArrays.Returns{typeof(v2)}(v1)
+        for (f, v) in ((f1, v1), (f2, v2))
+            @test f() === v
+            @test f(1) === v
+            @test f(1,2) === v
+            @test f(; gizmo=3) === v
+        end
     end
 
     @testset "Uniform arrays ($K)" for K in (UniformArray,
