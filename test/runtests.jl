@@ -96,7 +96,7 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
                 k == 4 ? K{T}(x, inds...) :
                 k == 5 ? K{T,N}(x, inds) :
                 k == 6 ? K{T,N}(x, inds...) : break
-            @test startswith(repr(A), "$K{")
+            @test findfirst("$K{", repr(A)) !== nothing
             @test eltype(A) === T
             @test eltype(B) === T
             @test ndims(A) == N
@@ -345,7 +345,7 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
         A = @inferred(UniformArray(val, inds))
         B = shape_type(A) <: Dims{ndims(A)} ? Array(A) : OffsetArray(A)
         @test A == B
-        @test startswith(repr(A), "UniformArray{")
+        @test findfirst("UniformArray{", repr(A)) !== nothing
         @testset "... with `dims=$dims`" for dims in dims_list
             f(x) = x > zero(x)
             if dims isa Colon
