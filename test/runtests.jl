@@ -337,8 +337,7 @@ using Base: OneTo, has_offset_axes
                 @test reverse(B; dims=dims) == @inferred(reverse(A; dims=dims))
             end
             if dims isa Integer || dims isa Colon
-                # FIXME: type inference is broken here
-                @test unique(B; dims=dims) == #=@inferred=# unique(A; dims=dims)
+                @test unique(B; dims=dims) == @inferred unique(A; dims=dims)
             end
         end
     end

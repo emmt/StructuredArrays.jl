@@ -83,17 +83,8 @@ end
 Base.unique(A::AbstractUniformArray; dims::Union{Colon,Integer} = :) = _unique(A, dims)
 
 _unique(A::AbstractUniformArray, ::Colon) = [value(A)]
-function _unique(A::AbstractUniformArray{T,N,I}, d::Integer) where {T,N,I}
-    if I <: Dims{N}
-        inp_size = size(A)
-        out_size = ntuple(i -> i == d ? 1 : inp_size[i], Val(N))
-        return UniformArray{T}(value(A), out_size)
-    else
-        inp_axes = axes(A)
-        out_axes = ntuple(i -> i == d ? 1 : inp_axes[i], Val(N))
-        return UniformArray{T}(value(A), out_axes)
-    end
-end
+_unique(A::AbstractUniformArray, dim::Integer) =
+    UniformArray(value(A), _reduced_inds1(shape(A), dim))
 
 # Optimize base reduction methods for uniform arrays.
 for func in (:all, :any,
@@ -213,23 +204,42 @@ for func in (:all, :any,
     end
 end
 
-_reduced_inds(I::Inds, ::Colon) = ()
-_reduced_inds(I::Inds, dim::Integer) = _reduced_inds(I, (dim,))
-function _reduced_inds(I::Inds{N},
-                       dims::Union{AbstractVector{<:Integer},
-                                   Tuple{Vararg{Integer}}}) where {N}
-    dmin = minimum(dims)
-    dmin ≥ one(dmin) || throw(ArgumentError("region dimension(s) must be ≥ 1, got $dmin"))
-    #all(d -> d ≥ one(d), dims) || throw(ArgumentError(
-    #    "region dimension(s) must be ≥ 1, got $(minimum(dims))"))
-    return ntuple(d -> d ∈ dims ? _reduced_axis(I[d]) : I[d], Val(N))
+# `_reduced_inds(inds,region)` reduces the dimensions in `region` for the array shape
+# `inds`. For type-stability in reduction operations, `_reduced_inds` shall return an
+# object of the same type as `inds` when `region` is an integer or a list of integers.
+# This is achieved by having `_reduced_axis` return an object of the same tayp as its
+# argument.
+_reduced_inds(inds::Inds, ::Colon) = ()
+function _reduced_inds(inds::Inds{N}, dim::Integer, reduce=_reduced_axis) where {N}
+    _check_reduce_dim(minimum(dim))
+    return ntuple(d -> d == dim ? reduce(inds[d]) : inds[d], Val(N))
 end
-_reduced_inds(I::Inds, dims) = throw(ArgumentError(
+_reduced_inds(inds::Inds, dims::Tuple{}) = inds
+function _reduced_inds(inds::Inds{N},
+                       dims::Union{AbstractVector{<:Integer},
+                                   Tuple{Integer,Vararg{Integer}}}) where {N}
+    _check_reduce_dim(minimum(dims))
+    return ntuple(d -> d ∈ dims ? _reduced_axis(inds[d]) : inds[d], Val(N))
+end
+_reduced_inds(inds::Inds, dims) = throw(ArgumentError(
     "region dimension(s) must be a colon, an integer, or a vector/tuple of integers"))
 
-_reduced_axis(::Int) = 1
-_reduced_axis(::Base.OneTo) = Base.OneTo(1)
-_reduced_axis(r::AbstractUnitRange) = (i = as(Int, first(r)); i:i)
+_check_reduce_dim(dim::Integer) = dim ≥ one(dim) || _throw_bad_reduce_dim(dim)
+@noinline _throw_bad_reduce_dim(dim::Integer) =
+    throw(ArgumentError("region dimension(s) must be ≥ 1, got $dim"))
+
+# `_reduced_axis` reduces a single dimension. Its input is either an array dimension or an
+# index range. For type-stability in reduction operations, `_reduced_axis` shall return an
+# object of the same type.
+_reduced_axis(dim::Integer) = one(dim)
+_reduced_axis(rng::Base.OneTo{T}) where {T} = Base.OneTo{T}(1)
+_reduced_axis(rng::AbstractUnitRange) = (i = first(rng); oftype(rng, i:i))
+
+# `_reduced_inds1` and `_reduced_axis1` are for function like `unique` that do not
+# preserve axis offsets.
+_reduced_inds1(inds::Inds, dim::Integer) = _reduced_inds(inds, dim, _reduced_axis1)
+_reduced_axis1(rng::AbstractUnitRange) = oftype(rng, 1:1)
+_reduced_axis1(x) = _reduced_axis(x)
 
 # Yield a uniform array with given value and axes/size or a scalar.
 _uniform(val, ::Tuple{}) = val
