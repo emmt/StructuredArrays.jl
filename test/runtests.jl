@@ -30,8 +30,9 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
         @test as_shape((0x4, Int16(0), 1,)) === (4, 0, 1,)
         @test as_shape((4, OneTo{Int16}(8), 1,)) === (4, 8, 1,)
         @test as_shape((OneTo(7), 2:6, 5)) === (7, 2:6, 5)
-        @test_throws ArgumentError check_shape(-1)
-        @test_throws ArgumentError check_shape(1:2:6)
+        @test_throws ArgumentError check_shape(-1)      # bad value
+        @test_throws ArgumentError check_shape(1:2:6)   # bad step
+        @test_throws ArgumentError check_shape("hello") # bad type
         A = ones(3,4)
         @test shape(A) === size(A)
         B = OffsetArray(A, OneTo(3), -1:2)
@@ -344,6 +345,7 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
         A = @inferred(UniformArray(val, inds))
         B = shape_type(A) <: Dims{ndims(A)} ? Array(A) : OffsetArray(A)
         @test A == B
+        @test startswith(repr(A), "UniformArray{")
         @testset "... with `dims=$dims`" for dims in dims_list
             f(x) = x > zero(x)
             if dims isa Colon
@@ -422,6 +424,10 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
             @test A == [f2(i,j) for i in 1:dims[1], j in 1:dims[2]]
             #@test_throws ErrorException A[1,1] = zero(T)
             @test_throws BoundsError A[0,1]
+            if shape_type(A) <: Dims
+                @test A == @inferred Array(A)
+            end
+            @test A == @inferred OffsetArray(A)
         end
         for A in (StructuredArray(S1, f1, dims),
                   StructuredArray(S1(), f1, dims...),
@@ -445,10 +451,13 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
             @test has_offset_axes(A) == false
             @test IndexStyle(A) === IndexLinear()
             @test IndexStyle(typeof(A)) === IndexLinear()
-            @test A == [f1(I[CartesianIndex(i,j)])
-                        for i in 1:dims[1], j in 1:dims[2]]
+            @test A == [f1(I[CartesianIndex(i,j)]) for i in 1:dims[1], j in 1:dims[2]]
             #@test_throws ErrorException A[1,1] = zero(T)
             @test_throws BoundsError A[0,1]
+            if shape_type(A) <: Dims
+                @test A == @inferred Array(A)
+            end
+            @test A == @inferred OffsetArray(A)
         end
 
         # Call constructors with illegal dimension.
