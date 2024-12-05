@@ -10,7 +10,7 @@ Main changes:
 - `Array` and `OffsetArray` may be called to convert a uniform or a structured array
   into a mutable array with the same axes.
 
-Other (minor) changes:
+Other changes:
 
 - For uniform arrays `A`, `show(A)` prints an expression that is valid Julia code.
 
@@ -28,6 +28,11 @@ Other (minor) changes:
   (with `@code_warntype`), and code clarity.
 
 - Speedup `foreach` for small tuples (≤ 32 entries) in Julia < 1.8.
+
+- Optimized reduction methods for uniform arrays (`extrema`, `findmax`, etc.) have been
+  fixed to yield consistent results when axes have offsets. In particular, an
+  `AbstractUniformArray` and an `OffsetArray` filled with the same value should yields
+  comparable results.
 
 ## Version 0.2.18
 

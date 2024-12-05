@@ -200,7 +200,13 @@ for func in (:all, :any,
                 else
                     inds = _reduced_inds(shape(A), dims)
                     val = f(value(A))
-                    return UniformArray(val, inds), CartesianIndices(inds)
+                    rngs = map(as_array_axis, inds)
+                    I = CartesianIndices(rngs)
+                    if shape_type(A) <: Dims
+                        return UniformArray(val, size(I)), I
+                    else
+                        return UniformArray(val, inds), OffsetArray(I, rngs)
+                    end
                 end
             end
         end
@@ -222,7 +228,8 @@ _reduced_inds(I::Inds, dims) = throw(ArgumentError(
     "region dimension(s) must be a colon, an integer, or a vector/tuple of integers"))
 
 _reduced_axis(::Int) = 1
-_reduced_axis(::AbstractUnitRange{Int}) = Base.OneTo(1)
+_reduced_axis(::Base.OneTo) = Base.OneTo(1)
+_reduced_axis(r::AbstractUnitRange) = (i = as(Int, first(r)); i:i)
 
 # Yield a uniform array with given value and axes/size or a scalar.
 _uniform(val, ::Tuple{}) = val
