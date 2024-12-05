@@ -20,6 +20,8 @@ Other (minor) changes:
 - Improved constructors for: speed and allocations (with `@benchmark`), type inference
   (with `@code_warntype`), and code clarity.
 
+- Speedup `foreach` for small tuples (≤ 32 entries) in Julia < 1.8.
+
 ## Version 0.2.18
 
 - Private methods `to_dim`, `to_axis`, `to_size`, and `to_axes` have been replaced by
