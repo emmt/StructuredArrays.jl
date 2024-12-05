@@ -84,6 +84,7 @@ Call `as_shape(Tuple, x)` to ensure that the shape is returned as a tuple.
 #      indices is done in a separate function `check_shape`.
 as_shape(dim::Integer) = as(Int, dim)
 as_shape(rng::Base.OneTo{<:Integer}) = as(Int, length(rng))
+as_shape(rng::AbstractUnitRange{Int}) = rng
 as_shape(rng::AbstractUnitRange{<:Integer}) = as(AbstractUnitRange{Int}, rng)
 as_shape(inds::Tuple{}) = ()
 as_shape(inds::Tuple{AxisLike, Vararg{AxisLike}}) = map(as_shape, inds)
