@@ -43,14 +43,22 @@ struct StructuredArray{T,N,S,F,I<:Inds{N}} <: AbstractStructuredArray{T,N,S,I}
         new{T,N,S,F,I}(inds, func)
 end
 
-# Define aliases.
+struct CartesianMesh{N,S,O} <: Function
+    step::S
+    origin::O
+end
+
+const CartesianMeshArray{T,N} = StructuredArray{T,N,IndexCartesian,<:CartesianMesh}
+
+# Matrix/vector aliases.
 for (A, N) in ((:Vector, 1), (:Matrix, 2))
     @eval begin
-        const $(Symbol("AbstractStructured",A)){T,S,I} = AbstractStructuredArray{T,$N,S,I}
-        const $(Symbol("AbstractUniform",A)){T,I} = AbstractUniformArray{T,$N,I}
-        const $(Symbol("MutableUniform",A)){T,I} = MutableUniformArray{T,$N,I}
-        const $(Symbol("Uniform",A)){T,I} = UniformArray{T,$N,I}
-        const $(Symbol("FastUniform",A)){T,V,I} = FastUniformArray{T,$N,V,I}
-        const $(Symbol("Structured",A)){T,S,F,I} = StructuredArray{T,$N,S,F,I}
+        const $(Symbol(:AbstractStructured,A)){T,S,I} = AbstractStructuredArray{T,$N,S,I}
+        const $(Symbol(:AbstractUniform,A)){T,I} = AbstractUniformArray{T,$N,I}
+        const $(Symbol(:MutableUniform,A)){T,I} = MutableUniformArray{T,$N,I}
+        const $(Symbol(:Uniform,A)){T,I} = UniformArray{T,$N,I}
+        const $(Symbol(:FastUniform,A)){T,V,I} = FastUniformArray{T,$N,V,I}
+        const $(Symbol(:Structured,A)){T,S,F,I} = StructuredArray{T,$N,S,F,I}
+        const $(Symbol(:CartesianMesh,A)){T} = CartesianMeshArray{T,$N}
     end
 end

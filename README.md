@@ -172,7 +172,6 @@ call `step(Tuple,A)` or `origin(Tuple,A)` instead.
 To create a Cartesian mesh as a function, call:
 
 ```julia
-using StructuredArrays.Meshes
 mesh = CartesianMesh{N}(step, origin = nothing)
 ```
 
@@ -194,8 +193,7 @@ abstract array whose values are the coordinates of the nodes of a finite size Ca
 mesh. For example:
 
 ``` julia
-using StructuredArrays.Meshes
- A = StructuredArray(CartesianMesh{N}(step, origin), inds...)
+A = StructuredArray(CartesianMesh{N}(step, origin), inds...)
 ```
 
 with `inds...` the *shape* (indices and/or dimensions) of the mesh. This can also be done
@@ -203,7 +201,6 @@ by calling:
 
 
 ``` julia
-using StructuredArrays
 A = CartesianMeshArray(inds...; step, origin=nothing)
 ```
 

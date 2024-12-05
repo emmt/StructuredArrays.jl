@@ -14,6 +14,10 @@ export
     AbstractUniformArray,
     AbstractUniformMatrix,
     AbstractUniformVector,
+    CartesianMesh,
+    CartesianMeshArray,
+    CartesianMeshMatrix,
+    CartesianMeshVector,
     FastUniformArray,
     FastUniformMatrix,
     FastUniformVector,
@@ -25,7 +29,8 @@ export
     StructuredVector,
     UniformArray,
     UniformMatrix,
-    UniformVector
+    UniformVector,
+    origin
 
 using OffsetArrays
 using TypeUtils

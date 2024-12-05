@@ -2,7 +2,6 @@ module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays, OffsetArrays
 using StructuredArrays: value, shape, shape_type, check_shape, as_shape
-using StructuredArrays.Meshes
 using Base: OneTo, has_offset_axes
 
 @testset "StructuredArrays package" begin

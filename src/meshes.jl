@@ -1,20 +1,4 @@
-module Meshes
-
-export
-    CartesianMesh,
-    CartesianMeshArray,
-    CartesianMeshMatrix,
-    CartesianMeshVector,
-    origin
-
-using TypeUtils
-
-import ..StructuredArrays: StructuredArray
-using ..StructuredArrays
-using ..StructuredArrays: Returns, print_axes, unrolled_mapfoldl, unrolled_mapfoldr
-
 """
-    using StructuredArrays.Meshes
     org = origin(A)
 
 yields the index at origin of coordinates in the Cartesian mesh or array `A`. The origin
@@ -29,7 +13,6 @@ cases.
 """ function origin end
 
 """
-    using StructuredArrays.Meshes
     mesh = CartesianMesh{N}(step, origin = nothing)
 
 yields a callable object that generates the coordinates of the nodes of a `N`-dimensional
@@ -68,11 +51,7 @@ by calling [`CartesianMeshArray`](@ref StructuredArrays.Meshes.CartesianMeshArra
 
     grid = CartesianMeshArray(inds...; step, origin=nothing)
 
-"""
-struct CartesianMesh{N,S,O} <: Function
-    step::S
-    origin::O
-end
+""" CartesianMesh
 
 CartesianMesh(step::Number, origin::Union{Nothing,Real} = nothing) =
     CartesianMesh{1}(step, origin)
@@ -134,12 +113,7 @@ end
     return stp .* (I .- org)
 end
 
-const CartesianMeshArray{T,N} = StructuredArray{T,N,IndexCartesian,<:CartesianMesh}
-const CartesianMeshVector{T} = CartesianMeshArray{T,1}
-const CartesianMeshMatrix{T} = CartesianMeshArray{T,2}
-
 """
-    using StructuredArrays.Meshes
     A = CartesianMeshArray(inds...; step, origin=nothing)
 
 builds an abstract array `A` representing a `N`-dimensional Cartesian mesh with shape
@@ -190,5 +164,3 @@ function Base.show(io::IO, ::MIME"text/plain", A::CartesianMeshArray)
     print(io, "; step=", step(A), ", origin=", repr(origin(A)), ")")
     nothing
 end
-
-end # module
