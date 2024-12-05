@@ -16,15 +16,14 @@ end
 Base.has_offset_axes(A::AbstractStructuredArray{T,N,S,Dims{N}}) where {T,N,S} = false
 
 # `copy(A)` and `deepcopy(A)` simply yield `A` if it is immutable.
-Base.copy(A::UniformArray) = A
-Base.copy(A::StructuredArray) = A
-Base.copy(A::FastUniformArray) = A
+for cls in (:StructuredArray, :FastUniformArray, :UniformArray)
+    @eval begin
+        Base.copy(A::$cls) = A
+        Base.deepcopy(A::$cls) = A
+    end
+end
 Base.copy(A::MutableUniformArray{T}) where {T} =
     MutableUniformArray{T}(BareBuild(), value(A), shape(A))
-
-Base.deepcopy(A::UniformArray) = A
-Base.deepcopy(A::StructuredArray) = A
-Base.deepcopy(A::FastUniformArray) = A
 Base.deepcopy(A::MutableUniformArray) = copy(A)
 
 function Base.Array(A::AbstractStructuredArray{T,N,S,Dims{N}}) where {T,N,S}
