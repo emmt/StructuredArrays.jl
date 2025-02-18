@@ -211,7 +211,7 @@ end
 # `reduce_shape(inds,region)` reduces the dimensions in `region` for the array shape
 # `inds`. For type-stability in reduction operations, `reduce_shape` shall return an
 # object of the same type as `inds` when `region` is an integer or a list of integers.
-# This is achieved by having `reduce_axis` return an object of the same tayp as its
+# This is achieved by having `reduce_axis` return an object of the same type as its
 # argument.
 reduce_shape(inds::Inds, ::Colon) = ()
 function reduce_shape(inds::Inds{N}, dim::Integer, reduce=reduce_axis) where {N}
