@@ -176,9 +176,15 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
 
         # For fast uniform arrays, the value can be specified as a type parameter.
         if K === FastUniformArray
-            @test K(true, inds) === @inferred K{Bool,length(inds),true}(inds)
             val = 1.2
-            @test K(val, inds) === @inferred K{typeof(val),length(inds),val}(inds)
+            if VERSION < v"1.2"
+                # Inference is broken for some versions of Julia.
+                @test K(true, inds) === K{Bool,length(inds),true}(inds)
+                @test K(val, inds) === K{typeof(val),length(inds),val}(inds)
+            else
+                @test K(true, inds) === @inferred K{Bool,length(inds),true}(inds)
+                @test K(val, inds) === @inferred K{typeof(val),length(inds),val}(inds)
+            end
         end
 
         # Check that axes specified as `Base.OneTo(dim)` is stored as `dim`.
