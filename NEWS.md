@@ -1,7 +1,9 @@
 # User visible changes in `StructuredArrays` package
 
-- `FastUniformArray{T,N,V}(args...)` can be used to build a fast uniform array whose
-  elements are all equal to `V`. `V isa T` must hold.
+## Version 0.2.20
+
+- Constructor `FastUniformArray{T,N,V}(args...)` can be used to build a fast uniform array
+  whose elements are all equal to `V`. `V isa T` must hold.
 
 ## Version 0.2.19
 
