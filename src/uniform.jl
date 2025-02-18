@@ -21,6 +21,7 @@ array.
     FastUniformArray(val, args...) -> A
     FastUniformArray{T}(val, args...) -> A
     FastUniformArray{T,N}(val, args...) -> A
+    FastUniformArray{T,N,val}(args...) -> A
 
 build an immutable uniform array `A` whose elements are all equal to `val` and whose axes
 are specified by `args...`. The difference with an instance of [`UniformArray`](@ref) is
@@ -59,6 +60,9 @@ for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
         end
     end
 end
+FastUniformArray{T,N,V}(args...) where {T,N,V} =
+    V isa T ? FastUniformArray{T,N}(V, args...) :
+    throw(ArgumentError("value `V` must be of type `$T`, got `typeof(V) = $(typeof(V))"))
 
 # Constructors for uniform vectors and matrices.
 for K in (:Uniform, :MutableUniform, :FastUniform), (A, N) in ((:Vector, 1), (:Matrix, 2))

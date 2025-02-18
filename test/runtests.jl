@@ -174,6 +174,13 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
             @test count(B) == 0
         end
 
+        # For fast uniform arrays, the value can be specified as a type parameter.
+        if K === FastUniformArray
+            @test K(true, inds) === @inferred K{Bool,length(inds),true}(inds)
+            val = 1.2
+            @test K(val, inds) === @inferred K{typeof(val),length(inds),val}(inds)
+        end
+
         # Check that axes specified as `Base.OneTo(dim)` is stored as `dim`.
         let A = K(-7.4, 2, OneTo(3), 1:4)
             @test A isa AbstractUniformArray{eltype(A),ndims(A),Tuple{Int,Int,UnitRange{Int}}}
