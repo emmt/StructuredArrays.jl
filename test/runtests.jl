@@ -175,8 +175,8 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
         end
 
         # Check that axes specified as `Base.OneTo(dim)` is stored as `dim`.
-        let A = UniformArray(-7.4, 2, OneTo(3), 1:4)
-            @test A isa UniformArray{eltype(A),ndims(A),Tuple{Int,Int,UnitRange{Int}}}
+        let A = K(-7.4, 2, OneTo(3), 1:4)
+            @test A isa AbstractUniformArray{eltype(A),ndims(A),Tuple{Int,Int,UnitRange{Int}}}
         end
 
         # Aliases.
