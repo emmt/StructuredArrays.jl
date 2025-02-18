@@ -153,8 +153,8 @@ step .* i             # if `origin` is `nothing`
 step .* (i .- origin) # else
 ```
 
-which yiedls a `N`-tuple of coordinates. Thanks to broadcasting rules, each of `step` and
-`origin` may be specified as a scalar to assume that this parameters is the same for all
+which yields a `N`-tuple of coordinates. Thanks to broadcasting rules, each of `step` and
+`origin` may be specified as a scalar to assume that this parameter is the same for all
 dimensions, or as a `N`-tuple otherwise. `origin` may also be `nothing` (the default), to
 assume that the origin of the mesh is at index `(0,0,...)`. In the implementation, the
 exact formula used to compute the coordinates of the nodes is optimized for the different
