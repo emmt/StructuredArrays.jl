@@ -1,5 +1,7 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.21
+
 - Improved type inference for `FastUniformArray`s.
 
 ## Version 0.2.20
