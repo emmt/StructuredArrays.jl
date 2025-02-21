@@ -47,30 +47,49 @@ create an immutable uniform array whose element value cannot be changed.
 
 # Constructors for uniform arrays. For each sub-type, all constructors call the last one
 # that checks and converts the shape arguments and then calls the inner constructor.
-for cls in (:FastUniformArray, :UniformArray, :MutableUniformArray)
+for type in (:FastUniformArray, :UniformArray, :MutableUniformArray)
     @eval begin
-        $cls(     val::T, inds::Vararg{AxisLike,N}) where {T,N} = $cls{T}(val, inds)
-        $cls{T}(  val,    inds::Vararg{AxisLike,N}) where {T,N} = $cls{T}(val, inds)
-        $cls{T,N}(val,    inds::Vararg{AxisLike,N}) where {T,N} = $cls{T}(val, inds)
-        $cls(     val::T, inds::NTuple{N,AxisLike}) where {T,N} = $cls{T}(val, inds)
-        $cls{T,N}(val,    inds::NTuple{N,AxisLike}) where {T,N} = $cls{T}(val, inds)
-        function $cls{T}(val, inds::NTuple{N,AxisLike}) where {T,N}
-            check_shape(inds)
-            return $cls{T}(BareBuild(), val, as_shape(inds))
-        end
+        $type(val, inds::Vararg{AxisLike}) = $type(val, inds)
+        $type(val::T, inds::Tuple{Vararg{AxisLike}}) where {T} = $type{T}(val, inds)
+
+        $type{T}(val, inds::Vararg{AxisLike}) where {T} = $type{T}(val, inds)
+        $type{T}(val, inds::Tuple{Vararg{AxisLike}}) where {T} =
+            $type{T}(BareBuild(), val, checked_shape(inds))
+
+        $type{T,N}(val, inds::Vararg{AxisLike,N}) where {T,N} = $type{T}(val, inds)
+        $type{T,N}(val, inds::NTuple{N,AxisLike}) where {T,N} = $type{T}(val, inds)
     end
 end
-FastUniformArray{T,N,V}(args...) where {T,N,V} =
-    V isa T ? FastUniformArray{T,N}(V, args...) :
-    throw(ArgumentError("value `V` must be of type `$T`, got `typeof(V) = $(typeof(V))"))
+
+# NOTE `FastUniformArray`, `FastUniformArray{T}`, and `FastUniformArray{T,N}` are not
+#      easily inferable; only `FastUniformArray{T,N,V}` is. Thus the latter constructors
+#      are explicitly implemented.
+FastUniformArray{T}(::BareBuild, val, inds::I) where {T,N,I<:Inds{N}} =
+    FastUniformArray{T,N,convert(T,val)}(BareBuild(), inds)
+FastUniformArray{T,N,V}(inds::Vararg{AxisLike,N}) where {T,N,V} = FastUniformArray{T,N,V}(inds)
+FastUniformArray{T,N,V}(inds::NTuple{N,AxisLike}) where {T,N,V} =
+    FastUniformArray{T,N,V}(BareBuild(), checked_shape(inds))
+function FastUniformArray{T,N,V,I}(inds) where {T,N,V,I<:Inds{N}}
+    typeof(inds) === I || throw(AssertionError("type parameter `I` must be exactly `typeof(inds)`"))
+    check_shape_strict(inds)
+    return FastUniformArray{T,N,V}(BareBuild(), inds)
+end
+
+@noinline throw_bad_eltype_for_uniform_array(::Type{T}, val::V) where {T,V} =
+    throw(AssertionError("uniform array element type is `$T` while value is of type `$V`"))
 
 # Constructors for uniform vectors and matrices.
 for K in (:Uniform, :MutableUniform, :FastUniform), (A, N) in ((:Vector, 1), (:Matrix, 2))
     @eval begin
         $(Symbol(K,A))(val::T, inds::Vararg{AxisLike,$N}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
-        $(Symbol(K,A)){T}(val, inds::Vararg{AxisLike,$N}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
         $(Symbol(K,A))(val::T, inds::NTuple{$N,AxisLike}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
+        $(Symbol(K,A)){T}(val, inds::Vararg{AxisLike,$N}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
         $(Symbol(K,A)){T}(val, inds::NTuple{$N,AxisLike}) where {T} = $(Symbol(K,:Array)){T}(val, inds)
+    end
+    K === :FastUniform || continue
+    @eval begin
+        $(Symbol(K,A)){T,V}(inds::Vararg{AxisLike,$N}) where {T,V} = $(Symbol(K,:Array)){T,$N,V}(inds)
+        $(Symbol(K,A)){T,V}(inds::NTuple{$N,AxisLike}) where {T,V} = $(Symbol(K,:Array)){T,$N,V}(inds)
     end
 end
 

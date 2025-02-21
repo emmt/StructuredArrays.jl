@@ -1,5 +1,7 @@
 # User visible changes in `StructuredArrays` package
 
+- Improved type inference for `FastUniformArray`s.
+
 ## Version 0.2.20
 
 - Constructor `FastUniformArray{T,N,V}(args...)` can be used to build a fast uniform array

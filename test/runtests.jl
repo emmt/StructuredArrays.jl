@@ -1,7 +1,7 @@
 module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays, OffsetArrays
-using StructuredArrays: value, shape, shape_type, check_shape, as_shape
+using StructuredArrays: value, shape, shape_type, checked_shape
 using Base: OneTo, has_offset_axes
 
 const counter = Ref(0)
@@ -17,22 +17,19 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
 
     @testset "Utilities" begin
         # Shape methods.
-        @test as_shape(()) === ()
-        @test as_shape(2) === 2
-        @test as_shape(0x2) === 2
-        @test as_shape(1:3) === 1:3
-        @test as_shape(OneTo(11)) === 11
-        @test as_shape(0x2:0x4) === 2:4
-        @test as_shape((3,)) === (3,)
-        @test as_shape(Tuple, 4) === (4,)
-        @test as_shape(Tuple, (5,)) === (5,)
-        @test as_shape(Tuple, 1:3) === (1:3,)
-        @test as_shape((0x4, Int16(0), 1,)) === (4, 0, 1,)
-        @test as_shape((4, OneTo{Int16}(8), 1,)) === (4, 8, 1,)
-        @test as_shape((OneTo(7), 2:6, 5)) === (7, 2:6, 5)
-        @test_throws ArgumentError check_shape(-1)      # bad value
-        @test_throws ArgumentError check_shape(1:2:6)   # bad step
-        @test_throws ArgumentError check_shape("hello") # bad type
+        @test @inferred(checked_shape(())) === ()
+        @test @inferred(checked_shape(2)) === (2,)
+        @test @inferred(checked_shape(0x2)) === (2,)
+        @test @inferred(checked_shape(1:3)) === (1:3,)
+        @test @inferred(checked_shape(OneTo(11))) === (11,)
+        @test @inferred(checked_shape(0x2:0x4)) === (2:4,)
+        @test @inferred(checked_shape((3,))) === (3,)
+        @test @inferred(checked_shape((0x4, Int16(0), 1,))) === (4, 0, 1,)
+        @test @inferred(checked_shape((4, OneTo{Int16}(8), 1,))) === (4, 8, 1,)
+        @test @inferred(checked_shape((OneTo(7), 2:6, 5))) === (7, 2:6, 5)
+        @test_throws ArgumentError checked_shape(-1)      # bad value
+        @test_throws ArgumentError checked_shape(1:2:6)   # bad step
+        @test_throws ArgumentError checked_shape("hello") # bad type
         A = ones(3,4)
         @test shape(A) === size(A)
         B = OffsetArray(A, OneTo(3), -1:2)
@@ -155,7 +152,7 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
         end
 
         # Check conversion of value.
-        let A = K{Float32}(π, dims)
+        let A = @inferred K{Float32}(π, dims)
             @test eltype(A) === Float32
             @test first(A) === Float32(π)
         end

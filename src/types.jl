@@ -4,9 +4,8 @@ const ConcreteIndexStyle = Union{IndexLinear,IndexCartesian}
 const AxisLike = Union{Integer,AbstractUnitRange{<:Integer}}
 
 # Type alias for array size or axes. For a proper shape, `Base.OneTo` ranges should be
-# replaced by their length. This is the job of the `as_shape` method. The `check_shape`
-# method is called to check the validity of the components of an array shape. The
-# `as_checked_shape` method combines the two.
+# replaced by their length. This is the job of the `checked_shape` method which also
+# checks the validity of the components of an array shape.
 const Inds{N} = NTuple{N,Union{Int,AbstractUnitRange{Int}}}
 
 abstract type AbstractStructuredArray{T,N,S<:ConcreteIndexStyle,I<:Inds{N}} <: AbstractArray{T,N} end
@@ -25,8 +24,8 @@ end
 
 struct FastUniformArray{T,N,V,I<:Inds{N}} <: AbstractUniformArray{T,N,I}
     inds::I
-    FastUniformArray{T}(::BareBuild, val, inds::I) where {T,N,I<:Inds{N}} =
-        new{T,N,as(T,val),I}(inds)
+    @inline FastUniformArray{T,N,V}(::BareBuild, inds::I) where {T,N,V,I<:Inds{N}} =
+        V isa T ? new{T,N,V,I}(inds) : throw_bad_eltype_for_uniform_array(T, V)
 end
 
 mutable struct MutableUniformArray{T,N,I<:Inds{N}} <: AbstractUniformArray{T,N,I}

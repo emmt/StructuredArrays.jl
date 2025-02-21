@@ -60,48 +60,33 @@ holds. `AbstractStructuredArray` objects directly store their shape.
 
 """
 shape(A::Array) = size(A)
-shape(A::AbstractArray) = as_shape(axes(A))
+shape(A::AbstractArray) = checked_shape(axes(A))
 
 shape_type(A::AbstractStructuredArray) = shape_type(typeof(A))
 shape_type(::Type{<:AbstractStructuredArray{T,N,S,I}}) where {T,N,S,I} = I
 
 """
-    StructuredArrays.as_shape(x)
+    StructuredArrays.checked_shape(x)
 
 converts `x` as a proper array shape that is an array dimension length, a unit-step array
 axis, or a tuple of these if `x` is a tuple. Instances of `Base.OneTo` are replaced by
-their length. All integers are converted to `Int`s if needed. The result is an instance
-(or a tuple) of `Union{Int,AbstractUnitRange{Int}`.
-
-Call `as_shape(Tuple, x)` to ensure that the shape is returned as a tuple.
-
-""" as_shape
-# NOTE `map(f,x)` with `x` a tuple yields good code for `@code_warntype` and `@benchmark`
-#      provided `f` is a simple function whose output can be inferred. Branching or
-#      throwing in `f` breaks this, so we cannot check for argument validity while
-#      converting array indices to a proper shape and the checking of the specified
-#      indices is done in a separate function `check_shape`.
-as_shape(dim::Integer) = as(Int, dim)
-as_shape(rng::Base.OneTo{<:Integer}) = as(Int, length(rng))
-as_shape(rng::AbstractUnitRange{Int}) = rng
-as_shape(rng::AbstractUnitRange{<:Integer}) = as(AbstractUnitRange{Int}, rng)
-as_shape(inds::Tuple{}) = ()
-as_shape(inds::Tuple{AxisLike, Vararg{AxisLike}}) = map(as_shape, inds)
-as_shape(Tuple, inds::Tuple{Vararg{AxisLike}}) = as_shape(inds)
-as_shape(Tuple, x::AxisLike) = (as_shape(x),)
+their length. All integers are converted to `Int`s if needed. The result is a tuple of
+`Union{Int,AbstractUnitRange{Int}`.
 
 """
-    StructuredArrays.check_shape(x)
+checked_shape(inds::Tuple{}) = ()
+checked_shape(inds::Vararg{AxisLike}) = checked_shape(inds)
+@inline checked_shape(inds::Tuple{Vararg{AxisLike}}) = map(checked_shape_elem, inds)
 
-throws an exception if `x` has invalid array indices such that `as_shape(x)` would not
-yield a proper array shape.
-
-"""
-check_shape(dim::Integer) = dim ≥ zero(dim) || throw_bad_dimension(dim)
-check_shape(rng::AbstractUnitRange{<:Integer}) = nothing
-check_shape(rng::AbstractRange{<:Integer}) = isone(step(rng)) || throw_nonunit_step(rng)
-@noinline check_shape(x::Any) = throw(ArgumentError(
+@noinline checked_shape(x...) = throw(ArgumentError(
     "invalid argument of type `$(typeof(x))` for array shape"))
+
+checked_shape_elem(dim::Integer) = dim ≥ zero(dim) ? as(Int, dim) : throw_bad_dimension(dim)
+checked_shape_elem(rng::Base.OneTo) = checked_shape_elem(length(rng))
+checked_shape_elem(rng::AbstractUnitRange{Int}) = rng
+checked_shape_elem(rng::AbstractUnitRange{<:Integer}) = as(AbstractUnitRange{Int}, rng)
+checked_shape_elem(rng::AbstractRange{<:Integer}) =
+    isone(step(rng)) ? checked_shape_elem(first(rng):last(rng)) : throw_nonunit_step(rng)
 
 @noinline throw_bad_dimension(dim::Integer) = throw(ArgumentError(
     "array dimension must be nonnegative"))
@@ -109,11 +94,13 @@ check_shape(rng::AbstractRange{<:Integer}) = isone(step(rng)) || throw_nonunit_s
 @noinline throw_nonunit_step(rng::AbstractRange) = throw(ArgumentError(
     "range has non-unit step"))
 
-# NOTE A loop such as `for x in inds; check_shape(x); end` is terrible in terms of
-#      performances. `foreach` is much better, at least in recent versions of Julia (≥
-#      1.8).
-check_shape(inds::Tuple{}) = nothing
-check_shape(inds::Tuple{AxisLike, Vararg{AxisLike}}) = foreach(check_shape, inds)
+# Similar to `checked_shape` but more strict and just check indices.
+check_shape_strict(inds::Tuple{}) = nothing
+check_shape_strict(inds::Tuple{Vararg{AbstractUnitRange{Int}}}) = nothing
+check_shape_strict(inds::Inds) = map(check_shape_elem_strict, inds)
+
+check_shape_elem_strict(dim::Int) = dim ≥ zero(dim) ? nothing : throw_bad_dimension(dim)
+check_shape_elem_strict(rng::AbstractUnitRange{Int}) = nothing
 
 print_axis(io::IO, rng::Base.OneTo) = print(io, length(rng))
 print_axis(io::IO, rng::AbstractUnitRange{<:Integer}) = print(io, first(rng), ':', last(rng))

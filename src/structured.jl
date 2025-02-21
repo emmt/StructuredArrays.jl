@@ -32,10 +32,8 @@ to the unit index.
 
 # The following is the only outer constructor that calls the inner constructor. It takes care of
 # checking and converting the array shape arguments.
-function StructuredArray{T,N,S}(func, inds::NTuple{N,AxisLike}) where {T,N,S<:ConcreteIndexStyle}
-    check_shape(inds)
-    return StructuredArray{T,N,S}(BareBuild(), func, as_shape(inds))
-end
+StructuredArray{T,N,S}(func, inds::NTuple{N,AxisLike}) where {T,N,S<:ConcreteIndexStyle} =
+    StructuredArray{T,N,S}(BareBuild(), func, checked_shape(inds))
 
 # If element type `T` is unspecified, all constructors call the following one.
 function StructuredArray(::Union{S,Type{S}}, func, inds::NTuple{N,AxisLike}) where {N,S<:ConcreteIndexStyle}
