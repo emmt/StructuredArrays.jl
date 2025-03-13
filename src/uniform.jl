@@ -110,19 +110,15 @@ _unique(A::AbstractUniformArray, dim::Integer) =
     UniformArray(value(A), reduce_shape1(shape(A), dim))
 
 # Optimize mapping and broadcasting of functions for uniform arrays.
-Broadcast.broadcasted(f, A::AbstractUniformArray) = map(f, A)
-function Base.map(f, A::UniformArray)
-    val = f(value(A))
-    return UniformArray{typeof(val)}(BareBuild(), val, shape(A))
-end
-function Base.map(f, A::FastUniformArray)
-    val = f(value(A))
-    return FastUniformArray{typeof(val),ndims(A),val}(BareBuild(), shape(A))
-end
-function Base.map(f, A::MutableUniformArray)
-    val = f(value(A))
-    return MutableUniformArray{typeof(val)}(BareBuild(), val, shape(A))
-end
+@inline Broadcast.broadcasted(f, A::AbstractUniformArray) = map(f, A)
+@inline Base.map(f, A::AbstractUniformArray) = replace_value(A, f(value(A)))
+
+replace_value(A::UniformArray, val::T) where {T} =
+    UniformArray{T}(BareBuild(), val, shape(A))
+replace_value(A::MutableUniformArray, val::T) where {T} =
+    MutableUniformArray{T}(BareBuild(), val, shape(A))
+@inline replace_value(A::FastUniformArray{<:Any,N}, val::T) where {T,N} =
+    FastUniformArray{T,N,val}(BareBuild(), shape(A))
 
 # Optimize base reduction methods for uniform arrays.
 for func in (:all, :any,

@@ -150,7 +150,12 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
                 @test (C === A) == !(A isa MutableUniformArray)
             end
             # Mapping and broadcasting of functions.
-            C = @inferred map(sin, A)
+            C = if !(A isa FastUniformArray) || v"1.1" ≤ VERSION ≤ v"1.3" || VERSION ≥ v"1.7"
+                # Inference for fast uniform arrays only works on some Julia versions
+                @inferred map(sin, A)
+            else
+                map(sin, A)
+            end
             @test C isa K
             @test ndims(C) === ndims(A)
             @test shape(C) === shape(A)
@@ -160,7 +165,12 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
             else
                 @test C === sin.(A)
             end
-            C = @inferred map(cos, B)
+            C = if !(B isa FastUniformArray) || v"1.1" ≤ VERSION ≤ v"1.3" || VERSION ≥ v"1.7"
+                # Inference for fast uniform arrays only works on some Julia versions
+                @inferred map(cos, B)
+            else
+                map(cos, B)
+            end
             @test C isa K
             @test ndims(C) === ndims(B)
             @test shape(C) === shape(B)
@@ -194,7 +204,7 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
 
         # For fast uniform arrays, the value can be specified as a type parameter.
         if K === FastUniformArray
-            val = 1.2
+            val = -1.23
             if VERSION < v"1.2"
                 # Inference is broken for some versions of Julia.
                 @test K(true, inds) === K{Bool,length(inds),true}(inds)
