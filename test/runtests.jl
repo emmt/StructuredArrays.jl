@@ -149,6 +149,27 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
                 @test C == A
                 @test (C === A) == !(A isa MutableUniformArray)
             end
+            # Mapping and broadcasting of functions.
+            C = @inferred map(sin, A)
+            @test C isa K
+            @test ndims(C) === ndims(A)
+            @test shape(C) === shape(A)
+            @test value(C) === sin(value(A))
+            if K <: MutableUniformArray
+                @test C == sin.(A)
+            else
+                @test C === sin.(A)
+            end
+            C = @inferred map(cos, B)
+            @test C isa K
+            @test ndims(C) === ndims(B)
+            @test shape(C) === shape(B)
+            @test value(C) === cos(value(B))
+            if K <: MutableUniformArray
+                @test C == cos.(B)
+            else
+                @test C === cos.(B)
+            end
         end
 
         # Check conversion of value.

@@ -1,8 +1,10 @@
 # User visible changes in `StructuredArrays` package
 
+- Optimize mapping and broadcasting of functions for uniform arrays.
+
 ## Version 0.2.21
 
-- Improved type inference for `FastUniformArray`s.
+- Improved type inference for `FastUniformArray`.
 
 ## Version 0.2.20
 
