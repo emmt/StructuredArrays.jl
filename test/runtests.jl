@@ -68,6 +68,29 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
         end
     end
 
+    uniform_types = (UniformArray, FastUniformArray, MutableUniformArray)
+    uniform_values = (1.2, pi, missing, NaN)
+    @testset "Comparison of `$U($x,m...)` and `$V($y,n...))`" for U in uniform_types, V in uniform_types, x in uniform_values, y in uniform_values
+        @test isequal(U(x, 0),      V(y, 0)     ) === true # empty arrays of same axes
+        @test isequal(U(x, 0, 1),   V(y, 1:0, 1)) === true # empty arrays of same axes
+        @test isequal(U(x, 0),      V(y, 0, 1)  ) === false # both empty but not same axes
+        @test isequal(U(x, 2, 3),   V(y, 2, 3)  ) === isequal(x, y)
+        @test isequal(U(x, 2, 1:3), V(y, 2, 3)  ) === isequal(x, y)
+        @test isequal(U(x, 2, 1:3), V(y, 2, 0:2)) === false # not same axes
+
+        @test (U(x, 0)      == V(y, 0)     ) === true # empty arrays of same axes
+        @test (U(x, 0, 1)   == V(y, 1:0, 1)) === true # empty arrays of same axes
+        @test (U(x, 0)      == V(y, 0, 1)  ) === false # both empty but not same axes
+        @test (U(x, 2, 3)   == V(y, 2, 3)  ) === (x == y)
+        @test (U(x, 2, 1:3) == V(y, 2, 3)  ) === (x == y)
+        @test (U(x, 2, 1:3) == V(y, 2, 0:2)) === false # not same axes
+
+        @test cmp(U(x, 0), V(y, 0)) ===  0
+        @test cmp(U(x, 0), V(y, 1)) === -1
+        @test cmp(U(x, 1), V(y, 0)) ===  1
+        @test cmp(U(x, 1), V(y, 1)) ===  cmp(x, y)
+    end
+
     @testset "Uniform arrays ($K)" for K in (UniformArray,
                                              FastUniformArray,
                                              MutableUniformArray)

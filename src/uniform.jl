@@ -120,6 +120,24 @@ replace_value(A::MutableUniformArray, val::T) where {T} =
 @inline replace_value(A::FastUniformArray{<:Any,N}, val::T) where {T,N} =
     FastUniformArray{T,N,val}(BareBuild(), shape(A))
 
+# Optimize comparisons of uniform arrays.
+Base.isequal(A::AbstractUniformArray, B::AbstractUniformArray) =
+    A === B || (axes(A) == axes(B) && (isempty(A) || isequal(value(A), value(B))))
+
+Base.:(==)(A::AbstractUniformArray, B::AbstractUniformArray) =
+    axes(A) != axes(B) ? false : isempty(A) ? true : value(A) == value(B)
+
+function Base.cmp(A::AbstractUniformVector, B::AbstractUniformVector)
+    na, nb = length(A), length(B)
+    if ((na > 0) & (nb > 0))
+        a, b = value(A), value(B)
+        if !isequal(a, b)
+            return isless(a, b) ? -1 : 1
+        end
+    end
+    return cmp(na, nb)
+end
+
 # Optimize base reduction methods for uniform arrays.
 for func in (:all, :any,
              :minimum, :maximum, :extrema,

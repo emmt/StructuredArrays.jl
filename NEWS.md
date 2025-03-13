@@ -1,5 +1,7 @@
 # User visible changes in `StructuredArrays` package
 
+- Optimize comparisons of uniform arrays via `isequal`, `==`, and `cmp`.
+
 - Optimize mapping and broadcasting of functions for uniform arrays.
 
 ## Version 0.2.21
