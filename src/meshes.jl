@@ -64,32 +64,52 @@ CartesianMesh(step::Union{Number,NTuple{N,Number}}, origin::NTuple{N,Real}) wher
 
 function CartesianMesh{N}(step::Union{Number,NTuple{N,Number}},
                           origin::Union{Nothing,Real,NTuple{N,Real}} = nothing) where {N}
-    R = promote_type(Int, real_type_for_mesh_node(step), real_type_for_mesh_node(origin))
-    stp = fix_step(R, step)
-    org = fix_origin(R, origin)
+    # The rules to promote the types of the mesh step and of the origin are:
+    #
+    # - Each coordinate is computed by the formula `(idx - org)*stp` with `idx` the node
+    #   index (an `Int`), `org` the (fractional) index of the origin (assumed to be 0 if
+    #   origin is `nothing`), and `stp` the step.
+    #
+    # - The step may have units, possibly different along all dimensions, but the origin
+    #   is unitless (nothing, integer, or real).
+    #
+    # - The computed node coordinates all have the same numerical precision of bare real
+    #   type `R`. This type may be integer but must be signed.
+    #
+    # - To optimize computations, for each node coordinate, at most one conversion shall
+    #   be done (no conversion is needed if `R` is `Int`). This may be the conversion of
+    #   `idx` to `R`, then the corresponding `org` must be of type `R`, or the conversion
+    #   of the offset `idx - org` to `R`, then the corresponding `org` must be `nothing`
+    #   or of type `Int`. To avoid further numerical conversions, all elements of the step
+    #   have the same bare real type `R`.
+    #
+    # - As a simplification, we consider that any integer `org` can be converted to an
+    #   `Int`.
+    #
+    R =  typeof(zero(mesh_offset_index_type(origin))*zero(mesh_step_real_type(step)))
+    stp = convert_mesh_step(R, step)
+    org = convert_mesh_origin(R, origin)
     return CartesianMesh{N,typeof(stp),typeof(org)}(stp, org)
 end
 
-# Convert the mesh step to the real numeric type `R` that has been inferred by
-# `real_type_for_mesh_node`. To make sure that loop unrolling is effective for all
-# Julia versions, we use a generated function when argument is a tuple.
-@inline fix_step(::Type{R}, x::Number) where {R<:Real} = convert_real_type(R, x)
-@inline fix_step(::Type{R}, x::NTuple{N,Number}) where {R<:Real,N} =
-    map(convert_real_type(R), x)
+mesh_offset_index_type(org::Nothing) = Int
+mesh_offset_index_type(org::Integer) = Int
+mesh_offset_index_type(org::Real   ) = promote_type(typeof(org), Int)
+@inline mesh_offset_index_type(org::Tuple{Real,Vararg{Real}}) =
+    promote_type(map(mesh_offset_index_type, org)...)
 
-# Convert the mesh origin to limit the number of conversions when computing node
-# coordinates with numeric type `R` that has been inferred by `real_type_for_mesh_node`.
-# To make sure that loop unrolling is effective for all Julia versions, we use a generated
-# function when argument is a tuple.
-@inline fix_origin(::Type{R}, x::Union{Nothing,Int}) where {R<:Real} = x
-@inline fix_origin(::Type{R}, x::Integer) where {R<:Real} = as(Int, x)
-@inline fix_origin(::Type{R}, x::Real) where {R<:Real} = as(R, x)
-@inline fix_origin(::Type{R}, x::NTuple{N,Real}) where {R<:Real,N} =
-    map(Converter(fix_origin, R), x)
+convert_mesh_origin(::Type{R}, org::Nothing) where {R<:Real} = nothing
+convert_mesh_origin(::Type{R}, org::Integer) where {R<:Real} = as(Int, org)
+convert_mesh_origin(::Type{R}, org::Real   ) where {R<:Real} = as(R, org)
+@inline convert_mesh_origin(::Type{R}, org::Tuple{Real,Vararg{Real}}) where {R<:Real} =
+    map(Converter(convert_mesh_origin, R), org)
 
-@inline real_type_for_mesh_node(x::Nothing) = Int
-@inline real_type_for_mesh_node(x::Number) = real_type(x)
-@inline real_type_for_mesh_node(x::Tuple{Vararg{Number}}) = real_type(x...)
+mesh_step_real_type(stp::Number) = real_type(stp)
+@inline mesh_step_real_type(stp::Tuple{Number,Vararg{Number}}) = real_type(stp...)
+
+convert_mesh_step(::Type{R}, stp::Number) where {R<:Real} = convert_real_type(R, stp)
+@inline convert_mesh_step(::Type{R}, stp::Tuple{Number,Vararg{Number}}) where {R<:Real} =
+    map(convert_real_type(R), stp)
 
 # Evaluators.
 @inline (f::CartesianMesh{N})(I::CartesianIndex{N}) where {N} = f(Tuple(I))

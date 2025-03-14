@@ -1,6 +1,7 @@
 module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays, OffsetArrays
+using TypeUtils: Converter
 using StructuredArrays: value, shape, shape_type, checked_shape
 using Base: OneTo, has_offset_axes
 
@@ -12,6 +13,20 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
 
 @generated my_mapfoldl(f, op, x::NTuple{N,Any}) where {N} = StructuredArrays.unrolled_mapfoldl(:f, :op, :x, N)
 @generated my_mapfoldr(f, op, x::NTuple{N,Any}) where {N} = StructuredArrays.unrolled_mapfoldr(:f, :op, :x, N)
+
+to_mesh_offset(::Type{R}) where {R<:Real} = Converter(to_mesh_offset, R)
+to_mesh_offset(::Type{R}, x::Integer) where {R<:Real} = as(Int, x)
+to_mesh_offset(::Type{R}, x::Real   ) where {R<:Real} = as(R, x)
+
+function mesh_node(stp::Union{Number,NTuple{N,Number}}, org::Nothing,
+                   idx::NTuple{N,Int}) where {N}
+    return idx .* stp
+end
+
+function mesh_node(stp::Union{Number,NTuple{N,Number}}, org::Union{Real,NTuple{N,Real}},
+                   idx::NTuple{N,Int}) where {N}
+    return (idx .- org) .* stp
+end
 
 @testset "StructuredArrays package" begin
 
@@ -528,49 +543,99 @@ incr_counter(args...; kwds...) = set_counter(get_counter() + 1)
         @test_throws ArgumentError StructuredArray{Bool}((i,j) -> i ≥ j, 1, -1)
     end
 
-    @testset "Cartesian meshes" begin
-        stp, org = 0.1f0, nothing
+    @testset "Cartesian meshes (step=$stp, origin=$org)" for (stp, org) in ((0.1f0, nothing),
+                                                                            ((0.1f0, 0.2f0), nothing),
+                                                                            ((0.1f0, 0.2f0, 0.3f0), (-1, 0, 1)))
         A = @inferred CartesianMesh(stp, org)
-        @test A isa CartesianMesh{1,typeof(stp),typeof(org)}
-
-        A = @inferred CartesianMesh{2}(stp, org)
-        @test A isa CartesianMesh{2,typeof(stp),typeof(org)}
-        @test ndims(A) === 2
-        @test eltype(A) === NTuple{2,Float32}
-        @test step(A) === stp
-        @test origin(A) === org
-        @test step(Tuple, A) === (stp, stp)
-        @test origin(Tuple, A) === (0, 0)
-        for i in ((-1, 3), (2, 7))
-            @test A(i...) === stp .* i
-            @test A(i) === A(i...)
-            @test A(CartesianIndex(i)) === A(i...)
+        stp′ = @inferred step(A)
+        org′ = @inferred origin(A)
+        N = stp isa Tuple ? length(stp) : org isa Tuple ? length(org) : 1
+        @test A isa CartesianMesh{N,typeof(stp′),typeof(org′)}
+        @test N === @inferred ndims(A)
+        R = real_type(stp′...)
+        @test (org isa Tuple) === (org′ isa Tuple)
+        @test (stp isa Tuple) === (stp′ isa Tuple)
+        if org isa Nothing
+            @test org′ === nothing
+            @test ntuple(Returns(0), N) === @inferred origin(Tuple, A)
+        elseif org isa Tuple
+            @test all(org′ .≈ org)
+            @test org′ === map(to_mesh_offset(R), org)
+            @test org′ === @inferred origin(Tuple, A)
+        else
+            @test org′ ≈ org
+            @test org′ === to_mesh_offset(R, org)
+            @test ntuple(Returns(org′), N) === @inferred origin(Tuple, A)
         end
-
-        stp, org = (0.1f0, 0.2f0), nothing
-        A = @inferred CartesianMesh(stp, org)
-        @test A isa CartesianMesh{2,typeof(stp),typeof(org)}
-        @test step(A) === stp
-        @test origin(A) === org
-        @test step(Tuple, A) === stp
-        @test origin(Tuple, A) === (0, 0)
-        for i in ((-1, 3), (2, 7))
-            @test A(i...) === stp .* i
-            @test A(i) === A(i...)
-            @test A(CartesianIndex(i)) === A(i...)
+        if stp isa Tuple
+            @test all(stp′ .≈ stp)
+            @test stp′ === map(convert_real_type(R), stp)
+            @test stp′ === @inferred step(Tuple, A)
+        else
+            @test stp′ ≈ stp
+            @test stp′ === convert_real_type(R, stp)
+            @test ntuple(Returns(stp′), N) === @inferred step(Tuple, A)
         end
+        I = (( 1,), ( 2, 3), ( 2, 3,-5))[N]
+        J = ((-2,), (-1, 4), ( 5,-2, 1))[N]
+        K = (( 0,), ( 3,-2), (-1, 2,-3))[N]
+        A_I = mesh_node(step(A), origin(A), I)
+        A_J = mesh_node(step(A), origin(A), J)
+        A_K = mesh_node(step(A), origin(A), K)
+        T = typeof(A_I)
+        @test T   === @inferred eltype(A)
+        @test A_I === @inferred A(I)
+        @test A_J === @inferred A(J)
+        @test A_K === @inferred A(K)
+        @test A_I === @inferred A(I...)
+        @test A_J === @inferred A(J...)
+        @test A_K === @inferred A(K...)
+        @test A_I === @inferred A(CartesianIndex(I))
+        @test A_J === @inferred A(CartesianIndex(J))
+        @test A_K === @inferred A(CartesianIndex(K))
 
-        stp, org = (0.1f0, 0.2f0, 0.3f0), (-1, 0, 1)
-        A = @inferred CartesianMesh(stp, org)
-        @test A isa CartesianMesh{3,typeof(stp),typeof(org)}
-        @test step(A) === stp
-        @test origin(A) === org
-        @test step(Tuple, A) === stp
-        @test origin(Tuple, A) === org
-        for i in ((-1, 3, 5), (2, 7, -2))
-            @test A(i...) === stp .* (i .- org)
-            @test A(i) === A(i...)
-            @test A(CartesianIndex(i)) === A(i...)
+        # Multiplication of mesh by a scalar.
+        B = @inferred 3A
+        @test B === @inferred A*3
+        @test all(step(B) .≈ (step(A) .* 3))
+        @test origin(B) === origin(A)
+        @test all(B(I) .≈ (A(I) .* 3))
+        @test all(B(J) .≈ (A(J) .* 3))
+        @test all(B(K) .≈ (A(K) .* 3))
+
+        # Division of mesh by a scalar.
+        B = @inferred A/2
+        @test B === @inferred 2\A
+        @test all(step(B) .≈ (step(A) ./ 2))
+        @test origin(B) === origin(A)
+        @test all(B(I) .≈ (A(I) ./ 2))
+        @test all(B(J) .≈ (A(J) ./ 2))
+        @test all(B(K) .≈ (A(K) ./ 2))
+
+        if stp isa Number && org isa Union{Nothing,Real}
+            A = @inferred CartesianMesh{2}(stp, org)
+            @test A isa CartesianMesh{2}
+            I = ( 2, 3)
+            J = (-1, 4)
+            K = ( 3,-2)
+            A_I = mesh_node(step(A), origin(A), I)
+            A_J = mesh_node(step(A), origin(A), J)
+            A_K = mesh_node(step(A), origin(A), K)
+            T = typeof(A_I)
+            @test T === @inferred eltype(A)
+            @test 2 === @inferred ndims(A)
+            @test A_I === @inferred A(I)
+            @test A_J === @inferred A(J)
+            @test A_K === @inferred A(K)
+            @test A_I === @inferred A(I...)
+            @test A_J === @inferred A(J...)
+            @test A_K === @inferred A(K...)
+            @test A_I === @inferred A(CartesianIndex(I))
+            @test A_J === @inferred A(CartesianIndex(J))
+            @test A_K === @inferred A(CartesianIndex(K))
+            @test all(A_I .≈ mesh_node(stp, org, I))
+            @test all(A_J .≈ mesh_node(stp, org, J))
+            @test all(A_K .≈ mesh_node(stp, org, K))
         end
     end
 end
