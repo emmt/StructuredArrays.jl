@@ -28,6 +28,16 @@ function mesh_node(stp::Union{Number,NTuple{N,Number}}, org::Union{Real,NTuple{N
     return (idx .- org) .* stp
 end
 
+function string_from_show(x, m=nothing)
+    io = IOBuffer()
+    if m === nothing
+        show(io, x)
+    else
+        show(io, m, x)
+    end
+    return String(take!(io))
+end
+
 @testset "StructuredArrays package" begin
 
     @testset "Utilities" begin
@@ -545,6 +555,8 @@ end
 
     @testset "Cartesian meshes (step=$stp, origin=$(repr(org)))" for (stp, org) in ((0.1f0, nothing),
                                                                                     ((0.1f0, 0.2f0), nothing),
+                                                                                    ((1.4, 0.9), (11, 12)),
+                                                                                    ((1//2, 3//4), (10.5, 4.7)),
                                                                                     ((0.1f0, 0.2f0, 0.3f0), (-1, 0, 1)))
         A = @inferred CartesianMesh(stp, org)
         stp′ = @inferred step(A)
@@ -598,17 +610,27 @@ end
 
         inds = ntuple(Returns(-15:20), N)
         X = @inferred StructuredArray(A, inds)
-        @test X            === @inferred CartesianMeshArray(inds...; step=stp, origin=org)
-        @test N            === @inferred ndims(X)
-        @test typeof(stp′) === @inferred step_type(X)
-        @test typeof(org′) === @inferred origin_type(X)
-        @test T            === @inferred eltype(X)
-        @test A_I          === @inferred X[I...]
-        @test A_J          === @inferred X[J...]
-        @test A_K          === @inferred X[K...]
-        @test A_I          === @inferred X[CartesianIndex(I)]
-        @test A_J          === @inferred X[CartesianIndex(J)]
-        @test A_K          === @inferred X[CartesianIndex(K)]
+        @test X                === @inferred CartesianMeshArray(inds...; step=stp, origin=org)
+        @test N                === @inferred ndims(X)
+        @test typeof(stp′)     === @inferred step_type(X)
+        @test typeof(org′)     === @inferred origin_type(X)
+        @test T                === @inferred eltype(X)
+        @test stp′             === @inferred step(X)
+        @test org′             === @inferred origin(X)
+        @test step(Tuple, A)   === @inferred step(Tuple, X)
+        @test origin(Tuple, A) === @inferred origin(Tuple, X)
+        @test A_I              === @inferred X[I...]
+        @test A_J              === @inferred X[J...]
+        @test A_K              === @inferred X[K...]
+        @test A_I              === @inferred X[CartesianIndex(I)]
+        @test A_J              === @inferred X[CartesianIndex(J)]
+        @test A_K              === @inferred X[CartesianIndex(K)]
+        @test startswith(string_from_show(X), "CartesianMeshArray{")
+        @test startswith(string_from_show(X, MIME"text/plain"()), "CartesianMeshArray{")
+
+        # Unary plus and minus.
+        @test @inferred(+A) === A
+        @test @inferred(-A) === @inferred(-one(R)*A)
 
         # Multiplication of mesh by a scalar.
         B = @inferred 3A
@@ -627,6 +649,35 @@ end
         @test all(B(I) .≈ (A(I) ./ 2))
         @test all(B(J) .≈ (A(J) ./ 2))
         @test all(B(K) .≈ (A(K) ./ 2))
+
+        # Shift of a mesh.
+        s = map(convert_real_type(R), ((1:N)...,)) .* step(A)
+        B = @inferred(A + s)
+        @test all(B(I) .≈ (A(I) .+ s))
+        @test all(B(J) .≈ (A(J) .+ s))
+        @test all(B(K) .≈ (A(K) .+ s))
+        @test B === @inferred(s + A)
+        B = @inferred(A - s)
+        @test all(B(I) .≈ (A(I) .- s))
+        @test all(B(J) .≈ (A(J) .- s))
+        @test all(B(K) .≈ (A(K) .- s))
+        B = @inferred(s - A)
+        @test all(B(I) .≈ (s .- A(I)))
+        @test all(B(J) .≈ (s .- A(J)))
+        @test all(B(K) .≈ (s .- A(K)))
+
+        # Comparison.
+        z = ntuple(Returns(zero(R)), Val(N)) .* step(A)
+        @test !isequal(A, CartesianMesh{N+1}(0.1, nothing))
+        @test isequal(@inferred(A + z),  A)
+        @test isequal(@inferred(z + A),  A)
+        @test isequal(@inferred(A - z),  A)
+        @test isequal(@inferred(z - A), -A)
+        @test A != CartesianMesh{N+1}(0.1, nothing)
+        @test @inferred(A + z) ==  A
+        @test @inferred(z + A) ==  A
+        @test @inferred(A - z) ==  A
+        @test @inferred(z - A) == -A
 
         if stp isa Number && org isa Union{Nothing,Real}
             A = @inferred CartesianMesh{2}(stp, org)
