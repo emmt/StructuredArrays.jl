@@ -51,8 +51,7 @@ by calling [`CartesianMeshArray`](@ref StructuredArrays.Meshes.CartesianMeshArra
 
     grid = CartesianMeshArray(inds...; step, origin=nothing)
 
-""" CartesianMesh
-
+"""
 CartesianMesh(step::Number, origin::Union{Nothing,Real} = nothing) =
     CartesianMesh{1}(step, origin)
 

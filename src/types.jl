@@ -49,6 +49,10 @@ struct CartesianMesh{N,
                      O<:Union{Nothing,Real,NTuple{N,Real}}} <: Function
     step::S
     origin::O
+    # Fully qualified inner constructor is needed to avoid ambiguities and favor applying
+    # the conversion/promotion rules of the arguments as implemented by the outer
+    # constructor `CartesianMesh{N}{(step,origin)`.
+    CartesianMesh{N,S,O}(step, origin) where {N,S,O} = new{N,S,O}(step, origin)
 end
 
 const CartesianMeshArray{T,N,C<:CartesianMesh} = StructuredArray{T,N,IndexCartesian,C}
