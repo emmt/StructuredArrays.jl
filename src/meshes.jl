@@ -144,8 +144,9 @@ Base.ndims(::Type{<:CartesianMesh{N}}) where {N} = N
 
 Base.eltype(A::CartesianMesh) = eltype(typeof(A))
 Base.eltype(::Type{<:CartesianMesh{N,S}}) where {N,S<:Tuple} = S
-Base.eltype(::Type{<:CartesianMesh{N,S}}) where {N,S<:Number} =
-    Tuple{ntuple(Returns(S), Val(N))...}
+@generated Base.eltype(::Type{<:CartesianMesh{N,S}}) where {N,S<:Number} = quote
+    $(Tuple{ntuple(Returns(S), Val{N}())...})
+end
 
 # Accessors.
 Base.step(A::CartesianMeshArray) = step(A.func)
