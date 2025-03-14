@@ -34,8 +34,9 @@ export
 
 using OffsetArrays
 using TypeUtils
+using TypeUtils: Converter
 
-import Base: @propagate_inbounds, front, tail
+import Base: @propagate_inbounds, front, tail, Fix1, Fix2
 
 include("compat.jl")
 include("types.jl")

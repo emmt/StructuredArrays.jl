@@ -74,10 +74,8 @@ end
 # `real_type_for_mesh_node`. To make sure that loop unrolling is effective for all
 # Julia versions, we use a generated function when argument is a tuple.
 @inline fix_step(::Type{R}, x::Number) where {R<:Real} = convert_real_type(R, x)
-@generated fix_step(::Type{R}, x::NTuple{N,Number}) where {R<:Real,N} = quote
-    $(Expr(:meta, :inline))
-    return $(Expr(:tuple, ntuple(i -> :(fix_step(R, x[$i])), Val(N))...))
-end
+@inline fix_step(::Type{R}, x::NTuple{N,Number}) where {R<:Real,N} =
+    map(convert_real_type(R), x)
 
 # Convert the mesh origin to limit the number of conversions when computing node
 # coordinates with numeric type `R` that has been inferred by `real_type_for_mesh_node`.
@@ -86,32 +84,18 @@ end
 @inline fix_origin(::Type{R}, x::Union{Nothing,Int}) where {R<:Real} = x
 @inline fix_origin(::Type{R}, x::Integer) where {R<:Real} = as(Int, x)
 @inline fix_origin(::Type{R}, x::Real) where {R<:Real} = as(R, x)
-@generated fix_origin(::Type{R}, x::NTuple{N,Real}) where {R<:Real,N} = quote
-    $(Expr(:meta, :inline))
-    return $(Expr(:tuple, ntuple(i -> :(fix_origin(R, x[$i])), Val(N))...))
-end
+@inline fix_origin(::Type{R}, x::NTuple{N,Real}) where {R<:Real,N} =
+    map(Converter(fix_origin, R), x)
 
 @inline real_type_for_mesh_node(x::Nothing) = Int
 @inline real_type_for_mesh_node(x::Number) = real_type(x)
-@generated real_type_for_mesh_node(x::NTuple{N,Number}) where {N} = quote
-    $(Expr(:meta, :inline))
-    return $(unrolled_mapfoldl(:real_type, :promote_type, :x, N))
-end
+@inline real_type_for_mesh_node(x::Tuple{Vararg{Number}}) = real_type(x...)
 
 # Evaluators.
 @inline (f::CartesianMesh{N})(I::CartesianIndex{N}) where {N} = f(Tuple(I))
 @inline (f::CartesianMesh{N})(I::Vararg{Real,N}) where {N} = f(I)
-@inline (f::CartesianMesh{N})(I::NTuple{N,Real}) where {N} = mesh_node(step(f), I, origin(f))
-
-@inline function mesh_node(stp::Union{Number,NTuple{N,Number}}, I::NTuple{N,Real},
-                           org::Nothing = nothing) where {N}
-    return stp .* I
-end
-
-@inline function mesh_node(stp::Union{Number,NTuple{N,Number}}, I::NTuple{N,Real},
-                           org::Union{Real,NTuple{N,Real}}) where {N}
-    return stp .* (I .- org)
-end
+@inline (f::CartesianMesh{N,S,Nothing})(I::NTuple{N,Real}) where {N,S} = I .* step(f)
+@inline (f::CartesianMesh{N,S,O})(I::NTuple{N,Real}) where {N,S,O} = (I .- origin(f)) .* step(f)
 
 """
     A = CartesianMeshArray(inds...; step, origin=nothing)
