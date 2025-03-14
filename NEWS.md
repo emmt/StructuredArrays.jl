@@ -1,5 +1,8 @@
 # User visible changes in `StructuredArrays` package
 
+- Operations on Cartesian meshes: multiplication or division by a scalar, adjust by
+  adding/subtracting tuple of offsets.
+
 - Optimize comparisons of uniform arrays via `isequal`, `==`, and `cmp`.
 
 - Optimize mapping and broadcasting of functions for uniform arrays.

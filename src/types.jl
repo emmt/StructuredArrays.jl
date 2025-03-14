@@ -8,6 +8,8 @@ const AxisLike = Union{Integer,AbstractUnitRange{<:Integer}}
 # checks the validity of the components of an array shape.
 const Inds{N} = NTuple{N,Union{Int,AbstractUnitRange{Int}}}
 
+const PlusOrMinus = Union{typeof(+),typeof(-)}
+
 abstract type AbstractStructuredArray{T,N,S<:ConcreteIndexStyle,I<:Inds{N}} <: AbstractArray{T,N} end
 
 abstract type AbstractUniformArray{T,N,I<:Inds{N}} <: AbstractStructuredArray{T,N,IndexLinear,I} end

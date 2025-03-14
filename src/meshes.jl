@@ -148,3 +148,56 @@ function Base.show(io::IO, ::MIME"text/plain", A::CartesianMeshArray)
     print(io, "; step=", step(A), ", origin=", repr(origin(A)), ")")
     nothing
 end
+
+# Unary plus and minus.
+Base.:(+)(A::CartesianMesh) = A
+Base.:(-)(A::CartesianMesh{N}) where {N} = CartesianMesh{N}(map(-, step(A)), origin(A))
+
+# Multiplication by a scalar.
+Base.:(*)(A::CartesianMesh, x::Number) = x*A
+Base.:(*)(x::Number, A::CartesianMesh) = CartesianMesh(x .* step(A), origin(A))
+
+# Division by a scalar.
+Base.:(\)(x::Number, A::CartesianMesh) = A/x
+Base.:(/)(A::CartesianMesh, x::Number) = CartesianMesh(x .\ step(A), origin(A))
+
+# Shift mesh.
+Base.:(+)(x::NTuple{N,Number}, A::CartesianMesh{N}) where {N} = A + x
+Base.:(+)(A::CartesianMesh{N}, x::NTuple{N,Number}) where {N} =
+    CartesianMesh{N}(step(A), adjust_origin(A, -, map(Converter(convert, Real), x./step(A))))
+Base.:(-)(x::NTuple{N,Number}, A::CartesianMesh{N}) where {N} = -(A - x)
+Base.:(-)(A::CartesianMesh{N}, x::NTuple{N,Number}) where {N} =
+    CartesianMesh{N}(step(A), adjust_origin(A, +, map(Converter(convert, Real), x./step(A))))
+
+adjust_origin(A::CartesianMesh{N},  op::PlusOrMinus, adj::NTuple{N,Real}) where {N} = _adjust_origin(origin(A), op, adj)
+_adjust_origin(org::Nothing,        op::PlusOrMinus, adj::NTuple{N,Real}) where {N} = map(op, adj)
+_adjust_origin(org::Real,           op::PlusOrMinus, adj::NTuple{N,Real}) where {N} = map(Base.Fix1(op, org), adj)
+_adjust_origin(org::NTuple{N,Real}, op::PlusOrMinus, adj::NTuple{N,Real}) where {N} = map(op, org, adj)
+
+# Equality is tested in the sense that the meshes have the same node coordinates. Since
+# neither step nor origin can contain `missing`, `isequal` and `==` are the same except
+# for NaNs.
+for f in (:(==), :isequal)
+    @eval begin
+        Base.$f(x::CartesianMesh{Nx}, y::CartesianMesh{Ny}) where {Nx,Ny} = false
+        Base.$f(x::CartesianMesh{N}, y::CartesianMesh{N}) where {N} =
+            x === y || (eq_step($f, x, y) && eq_origin($f, x, y))
+    end
+end
+
+eq_step(f, x::CartesianMesh, y::CartesianMesh) = _eq_step(f, step(x), step(y))
+_eq_step(f, x::Number, y::Number) = f(x, y)
+_eq_step(f, x::Tuple,  y::Tuple ) = f(x, y)
+_eq_step(f, x::Number, y::Tuple ) = all(Base.Fix1(f, x), y)
+_eq_step(f, x::Tuple,  y::Number) = all(Base.Fix2(f, y), x)
+
+eq_origin(f, x::CartesianMesh, y::CartesianMesh) = _eq_origin(f, origin(x), origin(y))
+_eq_origin(f, x::Nothing, y::Nothing) = true
+_eq_origin(f, x::Nothing, y::Real   ) = iszero(y)
+_eq_origin(f, x::Nothing, y::Tuple  ) = all(iszero, y)
+_eq_origin(f, x::Real,    y::Nothing) = iszero(x)
+_eq_origin(f, x::Real,    y::Real   ) = f(x, y)
+_eq_origin(f, x::Real,    y::Tuple  ) = all(Base.Fix1(f, x), y)
+_eq_origin(f, x::Tuple,   y::Nothing) = all(iszero, x)
+_eq_origin(f, x::Tuple,   y::Real   ) = all(Base.Fix2(f, y), x)
+_eq_origin(f, x::Tuple,   y::Tuple  ) = f(x, y)
