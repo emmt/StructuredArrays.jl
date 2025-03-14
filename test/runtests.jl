@@ -2,7 +2,7 @@ module TestStructuredArrays
 
 using Test, TypeUtils, StructuredArrays, OffsetArrays
 using TypeUtils: Converter
-using StructuredArrays: value, shape, shape_type, checked_shape
+using StructuredArrays: value, shape, shape_type, checked_shape, step_type, origin_type, Returns
 using Base: OneTo, has_offset_axes
 
 const counter = Ref(0)
@@ -543,14 +543,16 @@ end
         @test_throws ArgumentError StructuredArray{Bool}((i,j) -> i ≥ j, 1, -1)
     end
 
-    @testset "Cartesian meshes (step=$stp, origin=$org)" for (stp, org) in ((0.1f0, nothing),
-                                                                            ((0.1f0, 0.2f0), nothing),
-                                                                            ((0.1f0, 0.2f0, 0.3f0), (-1, 0, 1)))
+    @testset "Cartesian meshes (step=$stp, origin=$(repr(org)))" for (stp, org) in ((0.1f0, nothing),
+                                                                                    ((0.1f0, 0.2f0), nothing),
+                                                                                    ((0.1f0, 0.2f0, 0.3f0), (-1, 0, 1)))
         A = @inferred CartesianMesh(stp, org)
         stp′ = @inferred step(A)
         org′ = @inferred origin(A)
         N = stp isa Tuple ? length(stp) : org isa Tuple ? length(org) : 1
         @test A isa CartesianMesh{N,typeof(stp′),typeof(org′)}
+        @test typeof(stp′) === @inferred step_type(A)
+        @test typeof(org′) === @inferred origin_type(A)
         @test N === @inferred ndims(A)
         R = real_type(stp′...)
         @test (org isa Tuple) === (org′ isa Tuple)
@@ -593,6 +595,20 @@ end
         @test A_I === @inferred A(CartesianIndex(I))
         @test A_J === @inferred A(CartesianIndex(J))
         @test A_K === @inferred A(CartesianIndex(K))
+
+        inds = ntuple(Returns(-15:20), N)
+        X = @inferred StructuredArray(A, inds)
+        @test X            === @inferred CartesianMeshArray(inds...; step=stp, origin=org)
+        @test N            === @inferred ndims(X)
+        @test typeof(stp′) === @inferred step_type(X)
+        @test typeof(org′) === @inferred origin_type(X)
+        @test T            === @inferred eltype(X)
+        @test A_I          === @inferred X[I...]
+        @test A_J          === @inferred X[J...]
+        @test A_K          === @inferred X[K...]
+        @test A_I          === @inferred X[CartesianIndex(I)]
+        @test A_J          === @inferred X[CartesianIndex(J)]
+        @test A_K          === @inferred X[CartesianIndex(K)]
 
         # Multiplication of mesh by a scalar.
         B = @inferred 3A

@@ -142,6 +142,29 @@ StructuredArray(::Type{S}, A::CartesianMesh{N}, inds::Vararg{AxisLike,N}) where 
 StructuredArray(::Type{S}, A::CartesianMesh{N}, inds::NTuple{N,AxisLike}) where {N,S<:ConcreteIndexStyle} =
     StructuredArray{eltype(A),N,S}(A, inds)
 
+"""
+    StructuredArrays.step_type(A) -> T::Type
+
+yields the type of the step of the mesh `A`. The result is a *trait*: argument may be a
+type or an instance.
+
+"""
+step_type(A::Union{CartesianMesh,CartesianMeshArray}) = step_type(typeof(A))
+step_type(::Type{<:CartesianMesh{N,S,O}}) where {N,S,O} = S
+step_type(::Type{<:CartesianMeshArray{T,N,C}}) where {T,N,C} = step_type(C)
+@public step_type
+
+"""
+    StructuredArrays.origin_type(A) -> T::Type
+
+yields the type of the origin of the mesh `A`. The result is a *trait*: argument may be a
+type or an instance.
+
+"""
+origin_type(A::Union{CartesianMesh,CartesianMeshArray}) = origin_type(typeof(A))
+origin_type(::Type{<:CartesianMesh{N,S,O}}) where {N,S,O} = O
+origin_type(::Type{<:CartesianMeshArray{T,N,C}}) where {T,N,C} = origin_type(C)
+@public origin_type
 
 # Extend some base methods.
 Base.ndims(A::CartesianMesh) = ndims(typeof(A))

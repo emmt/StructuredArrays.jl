@@ -3,9 +3,14 @@
 - Operations on Cartesian meshes: multiplication or division by a scalar, adjust by
   adding/subtracting tuple of offsets.
 
+- New *trait* functions `TypeUtils.step_type` and `TypeUtils.origin_type` to retrieve the
+  types of a mesh step and origin.
+
 - Optimize comparisons of uniform arrays via `isequal`, `==`, and `cmp`.
 
 - Optimize mapping and broadcasting of functions for uniform arrays.
+
+- Use `TypeUtils.@public` to declare as `public` some documented but non-exported symbols.
 
 ## Version 0.2.21
 

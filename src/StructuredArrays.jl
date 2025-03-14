@@ -34,7 +34,7 @@ export
 
 using OffsetArrays
 using TypeUtils
-using TypeUtils: Converter
+using TypeUtils: Converter, @public
 
 import Base: @propagate_inbounds, front, tail, Fix1, Fix2
 
