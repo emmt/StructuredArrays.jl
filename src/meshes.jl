@@ -129,13 +129,19 @@ Also see [`CartesianMesh`](@ref StructuredArrays.Meshes.CartesianMesh) for a des
 of arguments `step` and `origin`.
 
 """
-CartesianMeshArray(inds::Union{Integer,AbstractUnitRange{<:Integer}}...; kwds...) =
-    CartesianMeshArray(inds; kwds...)
+CartesianMeshArray(inds::AxisLike...; kwds...) = CartesianMeshArray(inds; kwds...)
+CartesianMeshArray(inds::NTuple{N,AxisLike}; step, origin=nothing) where {N} =
+    StructuredArray(IndexCartesian, CartesianMesh{N}(step, origin), inds)
 
-function CartesianMeshArray(inds::NTuple{N,Union{Integer,AbstractUnitRange{<:Integer}}};
-                            step, origin=nothing) where {N}
-    return StructuredArray(IndexCartesian, CartesianMesh{N}(step, origin), inds)
-end
+StructuredArray(A::CartesianMesh{N}, inds::Vararg{AxisLike,N}) where {N} =
+    StructuredArray(A, inds)
+StructuredArray(A::CartesianMesh{N}, inds::NTuple{N,AxisLike}) where {N} =
+    StructuredArray(IndexCartesian, A, inds)
+StructuredArray(::Type{S}, A::CartesianMesh{N}, inds::Vararg{AxisLike,N}) where {N,S<:ConcreteIndexStyle} =
+    StructuredArray(S, A, inds)
+StructuredArray(::Type{S}, A::CartesianMesh{N}, inds::NTuple{N,AxisLike}) where {N,S<:ConcreteIndexStyle} =
+    StructuredArray{eltype(A),N,S}(A, inds)
+
 
 # Extend some base methods.
 Base.ndims(A::CartesianMesh) = ndims(typeof(A))
