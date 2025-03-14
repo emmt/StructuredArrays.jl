@@ -1,5 +1,7 @@
 # User visible changes in `StructuredArrays` package
 
+## Version 0.2.22
+
 - Operations on Cartesian meshes: multiplication or division by a scalar, adjust by
   adding/subtracting tuple of offsets.
 
