@@ -42,12 +42,14 @@ struct StructuredArray{T,N,S,F,I<:Inds{N}} <: AbstractStructuredArray{T,N,S,I}
         new{T,N,S,F,I}(inds, func)
 end
 
-struct CartesianMesh{N,S,O} <: Function
+struct CartesianMesh{N,
+                     S<:Union{Number,NTuple{N,Number}},
+                     O<:Union{Nothing,Real,NTuple{N,Real}}} <: Function
     step::S
     origin::O
 end
 
-const CartesianMeshArray{T,N} = StructuredArray{T,N,IndexCartesian,<:CartesianMesh}
+const CartesianMeshArray{T,N,C<:CartesianMesh} = StructuredArray{T,N,IndexCartesian,C}
 
 # Matrix/vector aliases.
 for (A, N) in ((:Vector, 1), (:Matrix, 2))
