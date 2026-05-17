@@ -225,6 +225,21 @@ end
             @test value(C) === cos(value(B))
             if K <: MutableUniformArray
                 @test C == cos.(B)
+                let A0 = copy(A), B0 = copy(B), δ = one(eltype(A))
+                    D = A .+ δ
+                    @test D isa MutableUniformArray
+                    @test D !== A
+                    @test shape(D) === shape(A)
+                    @test value(D) === value(A0) + δ
+                    @test value(A) === value(A0)
+
+                    E = B .- δ
+                    @test E isa MutableUniformArray
+                    @test E !== B
+                    @test shape(E) === shape(B)
+                    @test value(E) === value(B0) - δ
+                    @test value(B) === value(B0) 
+                end
             else
                 @test C === cos.(B)
             end
