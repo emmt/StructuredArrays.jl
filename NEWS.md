@@ -1,5 +1,11 @@
 # User visible changes in `StructuredArrays` package
 
+## Unreleased
+
+### Fixed
+
+- Bump compatibility for `TypeUtils` version 2.
+
 ## Version 0.2.22
 
 - Operations on Cartesian meshes: multiplication or division by a scalar, adjust by
