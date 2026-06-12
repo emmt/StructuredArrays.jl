@@ -1,6 +1,6 @@
 # User visible changes in `StructuredArrays` package
 
-## Unreleased
+## Version 0.2.23 (2026-06-12)
 
 ### Fixed
 
